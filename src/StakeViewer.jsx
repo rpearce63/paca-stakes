@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
 import { ABI } from "./PacaABI";
 const NETWORKS = {
@@ -21,58 +21,137 @@ const NETWORKS = {
 export default function StakeViewer() {
   const [address, setAddress] = useState("");
   const [stakes, setStakes] = useState([]);
-  const [rewards, setRewards] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [network, setNetwork] = useState("bsc");
+  const [chainTotals, setChainTotals] = useState({});
 
-  const fetchStakes = async () => {
+  const fetchChainData = useCallback(
+    async (chainId) => {
+      try {
+        const provider = new ethers.JsonRpcProvider(NETWORKS[chainId].rpc);
+        const contract = new ethers.Contract(
+          NETWORKS[chainId].contract,
+          ABI,
+          provider
+        );
+        const stakeData = await contract.getStakes(address);
+        const rewardsData = await contract.viewRewards(address);
+
+        const stakesWithIds = stakeData.map((stake, index) => {
+          const amount = Number(
+            ethers.formatUnits(stake.amount, NETWORKS[chainId].decimals)
+          );
+          const dailyRate = Number(stake.dailyRewardRate) / 100;
+          const dailyEarnings = (amount * dailyRate) / 100;
+
+          return {
+            ...stake,
+            id: index,
+            amount: stake.amount.toString(),
+            lastClaimed: stake.lastClaimed.toString(),
+            unlockTime: stake.unlockTime.toString(),
+            dailyRewardRate: stake.dailyRewardRate.toString(),
+            dailyEarnings,
+          };
+        });
+
+        const chainTotalStaked = stakesWithIds.reduce(
+          (acc, s) =>
+            acc +
+            Number(ethers.formatUnits(s.amount, NETWORKS[chainId].decimals)),
+          0
+        );
+
+        const chainDailyEarnings = stakesWithIds.reduce(
+          (acc, s) => acc + s.dailyEarnings,
+          0
+        );
+
+        return {
+          stakes: stakesWithIds,
+          totalStaked: chainTotalStaked,
+          rewards: Number(
+            ethers.formatUnits(rewardsData, NETWORKS[chainId].decimals)
+          ),
+          dailyEarnings: chainDailyEarnings,
+        };
+      } catch (error) {
+        console.error(`Error fetching ${chainId} data:`, error);
+        return {
+          stakes: [],
+          totalStaked: 0,
+          rewards: 0,
+          dailyEarnings: 0,
+        };
+      }
+    },
+    [address]
+  );
+
+  const fetchAllChains = useCallback(async () => {
     if (!address) return;
+
+    setLoading(true);
+    setError("");
+
     try {
-      setLoading(true);
-      setError("");
-      const provider = new ethers.JsonRpcProvider(NETWORKS[network].rpc);
-      const contract = new ethers.Contract(
-        NETWORKS[network].contract,
-        ABI,
-        provider
+      // Fetch data from all chains in parallel
+      const chainPromises = Object.keys(NETWORKS).map((chainId) =>
+        fetchChainData(chainId)
       );
-      const stakeData = await contract.getStakes(address);
-      const rewardsData = await contract.viewRewards(address);
-      setStakes(stakeData);
-      setRewards(ethers.formatUnits(rewardsData, NETWORKS[network].decimals));
-    } catch (err) {
-      console.error(err);
+      const results = await Promise.all(chainPromises);
+      // Update chain totals
+      const newChainTotals = {};
+      Object.keys(NETWORKS).forEach((chainId, index) => {
+        newChainTotals[chainId] = {
+          totalStaked: results[index].totalStaked,
+          rewards: results[index].rewards,
+          dailyEarnings: results[index].dailyEarnings,
+        };
+      });
+      setChainTotals(newChainTotals);
+
+      // Set stakes for the currently selected network
+      setStakes(results[Object.keys(NETWORKS).indexOf(network)].stakes);
+    } catch (error) {
+      console.error("Error fetching chain data:", error);
       setError("Failed to fetch data. Make sure the address is correct.");
       setStakes([]);
-      setRewards(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [address, network, fetchChainData]);
 
   useEffect(() => {
     if (address) {
-      fetchStakes();
+      fetchAllChains();
     }
-  }, [network]);
+  }, [address, fetchAllChains]);
 
-  const formatDate = (timestamp) =>
-    new Date(Number(timestamp) * 1000).toLocaleDateString();
-  const formatEther = (wei) =>
-    ethers.formatUnits(wei, NETWORKS[network].decimals);
+  const formatDate = (timestamp) => {
+    if (!timestamp) return "N/A";
+    const date = new Date(Number(timestamp) * 1000);
+    return date.toLocaleDateString();
+  };
+
+  const formatEther = (wei, chainId = network) => {
+    if (!wei) return "0";
+    try {
+      return ethers.formatUnits(wei, NETWORKS[chainId].decimals);
+    } catch {
+      return "0";
+    }
+  };
+
   const formatCurrency = (amount) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
     }).format(amount);
 
-  const totalStaked = stakes.reduce(
-    (acc, s) => acc + Number(formatEther(s.amount)),
-    0
-  );
-
   const daysLeft = (unlockTimestamp) => {
+    if (!unlockTimestamp) return 0;
     const now = Date.now();
     const unlockDate = new Date(Number(unlockTimestamp) * 1000);
     const diffMs = unlockDate - now;
@@ -80,13 +159,78 @@ export default function StakeViewer() {
   };
 
   const updateChain = (chain) => {
-    setStakes([]);
     setNetwork(chain);
+    // Update stakes for the selected chain
+    fetchChainData(chain).then((data) => {
+      setStakes(data.stakes);
+    });
   };
 
-  const formatAmount = (wei) => {
-    const amount = Number(formatEther(wei));
-    return formatCurrency(amount);
+  const formatAmount = (wei, chainId = network) => {
+    if (!wei) return formatCurrency(0);
+    try {
+      const amount = Number(formatEther(wei, chainId));
+      return formatCurrency(amount);
+    } catch {
+      return formatCurrency(0);
+    }
+  };
+
+  const ChainSummaryTable = () => {
+    const totalStakedAcrossChains = Object.values(chainTotals).reduce(
+      (acc, chain) => acc + chain.totalStaked,
+      0
+    );
+    const totalRewardsAcrossChains = Object.values(chainTotals).reduce(
+      (acc, chain) => acc + chain.rewards,
+      0
+    );
+    const totalDailyEarningsAcrossChains = Object.values(chainTotals).reduce(
+      (acc, chain) => acc + chain.dailyEarnings,
+      0
+    );
+
+    return (
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-3">Chain Summary</h2>
+        <table className="min-w-full text-sm text-left border border-gray-200">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="p-3 border">Chain</th>
+              <th className="p-3 border">Total Staked</th>
+              <th className="p-3 border">Unclaimed Rewards</th>
+              <th className="p-3 border">Daily Earnings</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(chainTotals).map(([chain, data]) => (
+              <tr key={chain} className="even:bg-gray-50">
+                <td className="p-3 border">{NETWORKS[chain].name}</td>
+                <td className="p-3 border">
+                  {formatCurrency(data.totalStaked)}
+                </td>
+                <td className="p-3 border">{formatCurrency(data.rewards)}</td>
+                <td className="p-3 border">
+                  {formatCurrency(data.dailyEarnings)}
+                </td>
+              </tr>
+            ))}
+            <tr className="bg-gray-100 font-semibold">
+              <td className="p-3 border">Total</td>
+              <td className="p-3 border">
+                {formatCurrency(totalStakedAcrossChains)}
+              </td>
+              <td className="p-3 border">
+                {formatCurrency(totalRewardsAcrossChains)}
+              </td>
+              <td className="p-3 border">
+                {formatCurrency(totalDailyEarningsAcrossChains)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    );
   };
 
   return (
@@ -103,7 +247,7 @@ export default function StakeViewer() {
           className="border p-2 w-full rounded shadow-sm"
         />
         <button
-          onClick={fetchStakes}
+          onClick={fetchAllChains}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
           {loading ? "Loading..." : "Get Stakes"}
@@ -134,37 +278,35 @@ export default function StakeViewer() {
         </label>
       </div>
       {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
-      {(rewards !== null || stakes.length > 0) && (
-        <div className="mb-4 text-gray-700 font-semibold text-center">
-          <p>Total Staked: {formatCurrency(totalStaked)}</p>
-          <p>
-            Total Unclaimed {NETWORKS[network].token}:{" "}
-            {formatCurrency(parseFloat(rewards || 0))}
-          </p>
-        </div>
-      )}
-      {stakes.length > 0 && (
+      {Object.keys(chainTotals).length > 0 && <ChainSummaryTable />}
+      {stakes?.length > 0 && (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm text-left border border-gray-200">
             <thead className="bg-gray-100">
               <tr>
+                <th className="p-3 border">ID</th>
                 <th className="p-3 border">
                   Amount ({NETWORKS[network].token})
                 </th>
                 <th className="p-3 border">Last Claimed</th>
                 <th className="p-3 border">Daily Reward %</th>
+                <th className="p-3 border">Daily Earnings</th>
                 <th className="p-3 border">Unlock Time</th>
                 <th className="p-3 border">Days Left</th>
                 <th className="p-3 border">Complete</th>
               </tr>
             </thead>
             <tbody>
-              {stakes.map((s, i) => (
-                <tr key={i} className="even:bg-gray-50">
+              {stakes.map((s) => (
+                <tr key={s.id} className="even:bg-gray-50">
+                  <td className="p-3 border">{s.id}</td>
                   <td className="p-3 border">{formatAmount(s.amount)}</td>
                   <td className="p-3 border">{formatDate(s.lastClaimed)}</td>
                   <td className="p-3 border">
                     {(Number(s.dailyRewardRate) / 100).toFixed(2)}%
+                  </td>
+                  <td className="p-3 border">
+                    {formatCurrency(s.dailyEarnings)}
                   </td>
                   <td className="p-3 border">{formatDate(s.unlockTime)}</td>
                   <td className="p-3 border">{daysLeft(s.unlockTime)}</td>
