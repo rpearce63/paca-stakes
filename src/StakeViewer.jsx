@@ -16,6 +16,13 @@ const NETWORKS = {
     token: "USDC",
     decimals: 6,
   },
+  sonic: {
+    name: "SONIC",
+    rpc: "https://rpc.soniclabs.com",
+    contract: "0xa26F8128Ecb2FF2FC5618498758cC82Cf1FDad5F",
+    token: "USDC",
+    decimals: 6,
+  },
 };
 
 export default function StakeViewer() {
@@ -330,6 +337,17 @@ export default function StakeViewer() {
             className="mr-2"
           />
           BASE (USDC)
+        </label>
+        <label className="flex items-center">
+          <input
+            type="radio"
+            name="network"
+            value="sonic"
+            checked={network === "sonic"}
+            onChange={() => updateChain("sonic")}
+            className="mr-2"
+          />
+          SONIC (USDC)
         </label>
       </div>
       {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
