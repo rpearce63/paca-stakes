@@ -83,6 +83,12 @@ export default function StakeViewer() {
     setStakes([]);
     setNetwork(chain);
   };
+
+  const formatAmount = (wei) => {
+    const amount = Number(formatEther(wei));
+    return formatCurrency(amount);
+  };
+
   return (
     <div className="max-w-5xl mx-auto p-6 bg-white shadow rounded">
       <h1 className="text-3xl font-bold mb-6 text-center">
@@ -155,12 +161,10 @@ export default function StakeViewer() {
             <tbody>
               {stakes.map((s, i) => (
                 <tr key={i} className="even:bg-gray-50">
-                  <td className="p-3 border">
-                    {formatCurrency(formatEther(s.amount))}
-                  </td>
+                  <td className="p-3 border">{formatAmount(s.amount)}</td>
                   <td className="p-3 border">{formatDate(s.lastClaimed)}</td>
                   <td className="p-3 border">
-                    {Number(s.dailyRewardRate) / 100}%
+                    {(Number(s.dailyRewardRate) / 100).toFixed(2)}%
                   </td>
                   <td className="p-3 border">{formatDate(s.unlockTime)}</td>
                   <td className="p-3 border">{daysLeft(s.unlockTime)}</td>
