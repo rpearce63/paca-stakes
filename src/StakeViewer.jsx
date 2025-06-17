@@ -25,6 +25,8 @@ export default function StakeViewer() {
   const [error, setError] = useState("");
   const [network, setNetwork] = useState("bsc");
   const [chainTotals, setChainTotals] = useState({});
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [hideCompleted, setHideCompleted] = useState(false);
 
   const fetchChainData = useCallback(
     async (chainId) => {
@@ -53,6 +55,7 @@ export default function StakeViewer() {
             unlockTime: stake.unlockTime.toString(),
             dailyRewardRate: stake.dailyRewardRate.toString(),
             dailyEarnings,
+            complete: Boolean(stake.complete),
           };
         });
 
@@ -176,6 +179,58 @@ export default function StakeViewer() {
     }
   };
 
+  const sortData = (data, { key, direction }) => {
+    if (!key) return data;
+
+    return [...data].sort((a, b) => {
+      let aValue = a[key];
+      let bValue = b[key];
+
+      // Handle numeric values
+      if (key === "amount" || key === "dailyEarnings") {
+        aValue = Number(formatEther(a[key]));
+        bValue = Number(formatEther(b[key]));
+      }
+      // Handle percentage values
+      else if (key === "dailyRewardRate") {
+        aValue = Number(a[key]) / 100;
+        bValue = Number(b[key]) / 100;
+      }
+      // Handle date values
+      else if (key === "lastClaimed" || key === "unlockTime") {
+        aValue = Number(a[key]);
+        bValue = Number(b[key]);
+      }
+      // Handle days left
+      else if (key === "daysLeft") {
+        aValue = daysLeft(a.unlockTime);
+        bValue = daysLeft(b.unlockTime);
+      }
+
+      if (aValue < bValue) return direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const requestSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return "↕️";
+    return sortConfig.direction === "asc" ? "↑" : "↓";
+  };
+
+  const filteredAndSortedStakes = sortData(
+    stakes.filter((stake) => !hideCompleted || !stake.complete),
+    sortConfig
+  );
+
   const ChainSummaryTable = () => {
     const totalStakedAcrossChains = Object.values(chainTotals).reduce(
       (acc, chain) => acc + chain.totalStaked,
@@ -281,23 +336,68 @@ export default function StakeViewer() {
       {Object.keys(chainTotals).length > 0 && <ChainSummaryTable />}
       {stakes?.length > 0 && (
         <div className="overflow-x-auto">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Stakes</h2>
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={hideCompleted}
+                onChange={(e) => setHideCompleted(e.target.checked)}
+                className="form-checkbox h-4 w-4 text-blue-600"
+              />
+              <span>Hide Completed Stakes</span>
+            </label>
+          </div>
           <table className="min-w-full text-sm text-left border border-gray-200">
             <thead className="bg-gray-100">
               <tr>
-                <th className="p-3 border">ID</th>
-                <th className="p-3 border">
-                  Amount ({NETWORKS[network].token})
+                <th
+                  className="p-3 border cursor-pointer hover:bg-gray-200"
+                  onClick={() => requestSort("id")}
+                >
+                  ID {getSortIcon("id")}
                 </th>
-                <th className="p-3 border">Last Claimed</th>
-                <th className="p-3 border">Daily Reward %</th>
-                <th className="p-3 border">Daily Earnings</th>
-                <th className="p-3 border">Unlock Time</th>
-                <th className="p-3 border">Days Left</th>
+                <th
+                  className="p-3 border cursor-pointer hover:bg-gray-200"
+                  onClick={() => requestSort("amount")}
+                >
+                  Amount ({NETWORKS[network].token}) {getSortIcon("amount")}
+                </th>
+                <th
+                  className="p-3 border cursor-pointer hover:bg-gray-200"
+                  onClick={() => requestSort("lastClaimed")}
+                >
+                  Last Claimed {getSortIcon("lastClaimed")}
+                </th>
+                <th
+                  className="p-3 border cursor-pointer hover:bg-gray-200"
+                  onClick={() => requestSort("dailyRewardRate")}
+                >
+                  Daily Reward % {getSortIcon("dailyRewardRate")}
+                </th>
+                <th
+                  className="p-3 border cursor-pointer hover:bg-gray-200"
+                  onClick={() => requestSort("dailyEarnings")}
+                >
+                  Daily Earnings {getSortIcon("dailyEarnings")}
+                </th>
+                <th
+                  className="p-3 border cursor-pointer hover:bg-gray-200"
+                  onClick={() => requestSort("unlockTime")}
+                >
+                  Unlock Time {getSortIcon("unlockTime")}
+                </th>
+                <th
+                  className="p-3 border cursor-pointer hover:bg-gray-200"
+                  onClick={() => requestSort("daysLeft")}
+                >
+                  Days Left {getSortIcon("daysLeft")}
+                </th>
                 <th className="p-3 border">Complete</th>
               </tr>
             </thead>
             <tbody>
-              {stakes.map((s) => (
+              {filteredAndSortedStakes.map((s) => (
                 <tr key={s.id} className="even:bg-gray-50">
                   <td className="p-3 border">{s.id}</td>
                   <td className="p-3 border">{formatAmount(s.amount)}</td>
