@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
-import { ABI } from "./PacaABI";
+import { ABI as BSC_ABI } from "./PacaABI_BSC";
+import { ABI as BASE_ABI } from "./PacaABI_BASE";
+import { ABI as SONIC_ABI } from "./PacaABI_SONIC";
 const NETWORKS = {
   bsc: {
     name: "BSC",
@@ -8,6 +10,7 @@ const NETWORKS = {
     contract: "0x3fF44D639a4982A4436f6d737430141aBE68b4E1",
     token: "USDT",
     decimals: 18,
+    abi: BSC_ABI,
   },
   base: {
     name: "BASE",
@@ -15,6 +18,7 @@ const NETWORKS = {
     contract: "0xDf2027318D27c4eD1C047B4d6247A7a705bb407b",
     token: "USDC",
     decimals: 6,
+    abi: BASE_ABI,
   },
   sonic: {
     name: "SONIC",
@@ -22,6 +26,7 @@ const NETWORKS = {
     contract: "0xa26F8128Ecb2FF2FC5618498758cC82Cf1FDad5F",
     token: "USDC",
     decimals: 6,
+    abi: SONIC_ABI,
   },
 };
 
@@ -34,18 +39,49 @@ export default function StakeViewer() {
   const [chainTotals, setChainTotals] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [hideCompleted, setHideCompleted] = useState(false);
+  const [stakesCache, setStakesCache] = useState({});
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  const fetchRewards = useCallback(
+    async (chainId) => {
+      console.log(`fetchRewards for ${chainId}`);
+      if (!address) return null;
+
+      try {
+        const provider = new ethers.JsonRpcProvider(NETWORKS[chainId].rpc);
+        const viewRewardsContract = new ethers.Contract(
+          NETWORKS[chainId].contract,
+          NETWORKS[chainId].abi,
+          provider
+        );
+
+        const rewardsData = await viewRewardsContract.viewRewards(address);
+        return Number(
+          ethers.formatUnits(rewardsData, NETWORKS[chainId].decimals)
+        );
+      } catch (error) {
+        console.error(`Error fetching ${chainId} rewards:`, error);
+        return 0;
+      }
+    },
+    [address]
+  );
 
   const fetchChainData = useCallback(
     async (chainId) => {
+      console.log(`fetchChainData for ${chainId}`);
+      if (!address) return null;
+
       try {
         const provider = new ethers.JsonRpcProvider(NETWORKS[chainId].rpc);
-        const contract = new ethers.Contract(
+        const getStakesContract = new ethers.Contract(
           NETWORKS[chainId].contract,
-          ABI,
+          NETWORKS[chainId].abi,
           provider
         );
-        const stakeData = await contract.getStakes(address);
-        const rewardsData = await contract.viewRewards(address);
+
+        const stakeData = await getStakesContract.getStakes(address);
+        const rewardsData = await fetchRewards(chainId);
 
         const stakesWithIds = stakeData.map((stake, index) => {
           const amount = Number(
@@ -81,22 +117,15 @@ export default function StakeViewer() {
         return {
           stakes: stakesWithIds,
           totalStaked: chainTotalStaked,
-          rewards: Number(
-            ethers.formatUnits(rewardsData, NETWORKS[chainId].decimals)
-          ),
+          rewards: rewardsData,
           dailyEarnings: chainDailyEarnings,
         };
       } catch (error) {
         console.error(`Error fetching ${chainId} data:`, error);
-        return {
-          stakes: [],
-          totalStaked: 0,
-          rewards: 0,
-          dailyEarnings: 0,
-        };
+        return null;
       }
     },
-    [address]
+    [address, fetchRewards]
   );
 
   const fetchAllChains = useCallback(async () => {
@@ -111,19 +140,32 @@ export default function StakeViewer() {
         fetchChainData(chainId)
       );
       const results = await Promise.all(chainPromises);
-      // Update chain totals
-      const newChainTotals = {};
-      Object.keys(NETWORKS).forEach((chainId, index) => {
-        newChainTotals[chainId] = {
-          totalStaked: results[index].totalStaked,
-          rewards: results[index].rewards,
-          dailyEarnings: results[index].dailyEarnings,
-        };
-      });
-      setChainTotals(newChainTotals);
 
-      // Set stakes for the currently selected network
-      setStakes(results[Object.keys(NETWORKS).indexOf(network)].stakes);
+      // Update chain totals and cache
+      const newChainTotals = {};
+      const newStakesCache = {};
+
+      Object.keys(NETWORKS).forEach((chainId, index) => {
+        const result = results[index];
+        if (result) {
+          newChainTotals[chainId] = {
+            totalStaked: result.totalStaked,
+            rewards: result.rewards,
+            dailyEarnings: result.dailyEarnings,
+          };
+          newStakesCache[chainId] = result.stakes;
+        }
+      });
+
+      setChainTotals(newChainTotals);
+      setStakesCache(newStakesCache);
+
+      // Only update current stakes if we have data for the current network
+      if (newStakesCache[network]) {
+        setStakes(newStakesCache[network]);
+      }
+
+      setIsInitialLoad(false);
     } catch (error) {
       console.error("Error fetching chain data:", error);
       setError("Failed to fetch data. Make sure the address is correct.");
@@ -133,6 +175,7 @@ export default function StakeViewer() {
     }
   }, [address, network, fetchChainData]);
 
+  // Only fetch all chains when address changes
   useEffect(() => {
     if (address) {
       fetchAllChains();
@@ -168,12 +211,38 @@ export default function StakeViewer() {
     return diffMs > 0 ? Math.ceil(diffMs / (1000 * 60 * 60 * 24)) : 0;
   };
 
-  const updateChain = (chain) => {
+  const updateChain = async (chain) => {
     setNetwork(chain);
-    // Update stakes for the selected chain
-    fetchChainData(chain).then((data) => {
-      setStakes(data.stakes);
-    });
+    console.log(stakesCache);
+
+    if (stakesCache[chain]) {
+      console.log("cache hit");
+      setStakes(stakesCache[chain]);
+      // Only fetch rewards for the selected chain
+      const rewards = await fetchRewards(chain);
+      setChainTotals((prev) => ({
+        ...prev,
+        [chain]: {
+          ...prev[chain],
+          rewards: rewards,
+        },
+      }));
+    } else if (!isInitialLoad) {
+      // If we don't have cached data and it's not the initial load,
+      // fetch data for this chain
+      const result = await fetchChainData(chain);
+      if (result) {
+        setStakes(result.stakes);
+        setChainTotals((prev) => ({
+          ...prev,
+          [chain]: {
+            totalStaked: result.totalStaked,
+            rewards: result.rewards,
+            dailyEarnings: result.dailyEarnings,
+          },
+        }));
+      }
+    }
   };
 
   const formatAmount = (wei, chainId = network) => {
