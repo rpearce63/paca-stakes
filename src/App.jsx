@@ -1,9 +1,10 @@
 import React from "react";
-import StakeViewer from "./StakeViewer";
+import "./App.css";
+import StakeViewer from "./components/StakeViewer";
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="App">
       <StakeViewer />
     </div>
   );
