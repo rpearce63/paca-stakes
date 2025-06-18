@@ -36,5 +36,5 @@ export const daysLeft = (unlockTimestamp) => {
   const now = Date.now();
   const unlockDate = new Date(Number(unlockTimestamp) * 1000);
   const diffMs = unlockDate - now;
-  return diffMs > 0 ? Math.ceil(diffMs / (1000 * 60 * 60 * 24)) : 0;
+  return diffMs > 0 ? Math.floor(diffMs / (1000 * 60 * 60 * 24)) : 0;
 };

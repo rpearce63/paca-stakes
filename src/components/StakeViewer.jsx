@@ -18,6 +18,7 @@ export default function StakeViewer() {
   const [stakesCache, setStakesCache] = useState({});
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const networkRef = useRef(network);
+  const pollingIntervalRef = useRef(null);
 
   // Update ref when network changes
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function StakeViewer() {
 
   const fetchRewards = useCallback(
     async (chainId) => {
-      console.log(`fetchRewards for ${chainId}`);
+      // console.log(`fetchRewards for ${chainId}`);
       if (!address) return null;
 
       try {
@@ -51,7 +52,7 @@ export default function StakeViewer() {
 
   const fetchChainData = useCallback(
     async (chainId) => {
-      console.log(`fetchChainData for ${chainId}`);
+      // console.log(`fetchChainData for ${chainId}`);
       if (!address) return null;
 
       try {
@@ -157,12 +158,71 @@ export default function StakeViewer() {
     }
   }, [address, fetchChainData]);
 
+  // Poll rewards every minute
+  const startPolling = useCallback(() => {
+    if (!address) return;
+
+    // Clear any existing interval
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+
+    // Start polling every minute (60000ms)
+    pollingIntervalRef.current = setInterval(async () => {
+      console.log("🔄 Polling for updated rewards...");
+
+      try {
+        // Fetch fresh rewards for all chains
+        const rewardsPromises = Object.keys(NETWORKS).map(async (chainId) => {
+          const rewards = await fetchRewards(chainId);
+          return { chainId, rewards };
+        });
+
+        const rewardsResults = await Promise.all(rewardsPromises);
+
+        // Update chain totals with fresh rewards
+        setChainTotals((prev) => {
+          const updated = { ...prev };
+          rewardsResults.forEach(({ chainId, rewards }) => {
+            if (updated[chainId]) {
+              updated[chainId] = {
+                ...updated[chainId],
+                rewards: rewards,
+              };
+            }
+          });
+          return updated;
+        });
+
+        console.log("✅ Rewards updated via polling");
+      } catch (error) {
+        console.error("❌ Error polling rewards:", error);
+      }
+    }, 60000); // 60 seconds
+  }, [address, fetchRewards]);
+
+  // Stop polling
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  }, []);
+
   // Only fetch all chains when address changes
   useEffect(() => {
     if (address) {
       fetchAllChains();
+      startPolling();
+    } else {
+      stopPolling();
     }
-  }, [address, fetchAllChains]);
+
+    // Cleanup polling on unmount or address change
+    return () => {
+      stopPolling();
+    };
+  }, [address, fetchAllChains, startPolling, stopPolling]);
 
   // Update stakes when network changes (if we have cached data)
   useEffect(() => {
@@ -173,10 +233,8 @@ export default function StakeViewer() {
 
   const updateChain = async (chain) => {
     setNetwork(chain);
-    console.log(stakesCache);
 
     if (stakesCache[chain]) {
-      console.log("cache hit");
       setStakes(stakesCache[chain]);
       // Only fetch rewards for the selected chain
       const rewards = await fetchRewards(chain);
