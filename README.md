@@ -1,12 +1,108 @@
-# React + Vite
+# Paca Stakes Viewer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React application for viewing and managing stakes across multiple blockchain networks (BSC, Base, Sonic).
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Multi-chain support (BSC, Base, Sonic)
+- Real-time stake data viewing
+- Cached data for improved performance
+- Sortable stake tables
+- Chain summary overview
+- Responsive design
 
-## Expanding the ESLint configuration
+## Project Structure
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```ini
+src/
+├── components/           # React components
+│   ├── StakeViewer.jsx  # Main component
+│   ├── NetworkSelector.jsx
+│   ├── ChainSummaryTable.jsx
+│   ├── StakesTable.jsx
+│   └── Footer.jsx
+├── contracts/           # Contract ABIs
+├── constants/           # Configuration constants
+├── utils/              # Utility functions
+└── assets/             # Static assets
+```
+
+## Development
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+
+### Installation
+
+```bash
+npm install
+```
+
+### Running the Development Server
+
+```bash
+npm run dev
+```
+
+### Building for Production
+
+```bash
+npm run build
+```
+
+## Build Information
+
+The footer displays build information that can be configured using environment variables:
+
+### Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Build Information
+VITE_APP_VERSION=1.0.0
+VITE_BUILD_NUMBER=001
+VITE_BUILD_DATE=2024-01-15
+```
+
+### Automated Build Information
+
+For automated deployments, you can set these variables in your CI/CD pipeline:
+
+```bash
+# Example for GitHub Actions
+VITE_APP_VERSION=${{ github.ref_name }}
+VITE_BUILD_NUMBER=${{ github.run_number }}
+VITE_BUILD_DATE=$(date +%Y-%m-%d)
+```
+
+### Default Values
+
+If environment variables are not set, the footer will display:
+
+- Version: "1.0.0"
+- Build: "dev"
+- Date: Current date
+
+## Adding New Networks
+
+To add a new blockchain network:
+
+1. Add the contract ABI to `src/contracts/`
+2. Update `src/constants/networks.js` with the new network configuration
+3. The UI will automatically include the new network in the selector
+
+## Technologies Used
+
+- React 18
+- Vite
+- Ethers.js
+- Tailwind CSS
+- React Hooks
+
+## License
+
+© 2024 Paca Stakes Viewer. All rights reserved.
+Registered with Paca Finance
