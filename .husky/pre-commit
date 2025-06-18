@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔧 Running pre-commit hook..."
+
+# Increment build information
+node scripts/increment-build.js
+
+# Add the updated .env file to the commit
+git add .env
+
+echo "✅ Pre-commit hook completed"
