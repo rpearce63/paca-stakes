@@ -278,21 +278,21 @@ export default function StakeViewer() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto p-6 bg-white shadow rounded">
+    <div className="w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-white shadow rounded">
       <h1 className="text-3xl font-bold mb-6 text-center">
         Stake Viewer ({NETWORKS[network].name})
       </h1>
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4 w-full">
         <input
           type="text"
           placeholder="Enter wallet address"
           value={address}
           onChange={(e) => setAddress(e.target.value)}
-          className="border p-2 w-full rounded shadow-sm"
+          className="border p-2 w-full rounded shadow-sm text-base"
         />
         <button
           onClick={fetchAllChains}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full sm:w-auto"
         >
           {loading ? "Loading..." : "Get Stakes"}
         </button>

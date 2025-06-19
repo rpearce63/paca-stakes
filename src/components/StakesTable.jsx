@@ -16,7 +16,7 @@ const StakesTable = ({
   getSortIcon,
 }) => {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto w-full">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-semibold">Stakes</h2>
         <label className="flex items-center space-x-2">
@@ -29,7 +29,7 @@ const StakesTable = ({
           <span>Hide Completed Stakes</span>
         </label>
       </div>
-      <table className="min-w-full text-sm text-left border border-gray-200">
+      <table className="min-w-[700px] w-full text-sm text-left border border-gray-200">
         <thead className="bg-gray-100">
           <tr>
             <th
