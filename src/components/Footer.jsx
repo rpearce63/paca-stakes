@@ -12,8 +12,8 @@ const Footer = () => {
       <div className="max-w-5xl mx-auto px-6">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="text-sm text-gray-300 mb-4 md:mb-0">
-            <p>© 2024 Paca Stakes Viewer. All rights reserved.</p>
-            <p className="mt-1">Registered with Pelican Point</p>
+            <p>© 2025 Paca Stakes Viewer. All rights reserved.</p>
+            <p className="mt-1">Pelican Point Consulting</p>
           </div>
           <div className="text-sm text-gray-400 text-center md:text-right">
             <p>Version: {version}</p>
