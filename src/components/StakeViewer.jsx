@@ -209,7 +209,7 @@ export default function StakeViewer() {
 
     // Start polling every minute (60000ms)
     pollingIntervalRef.current = setInterval(async () => {
-      console.log("🔄 Polling for updated rewards...");
+      //console.log("🔄 Polling for updated rewards...");
 
       try {
         // Fetch fresh rewards for all chains
@@ -234,7 +234,7 @@ export default function StakeViewer() {
           return updated;
         });
 
-        console.log("✅ Rewards updated via polling");
+        //console.log("✅ Rewards updated via polling");
       } catch (error) {
         console.error("❌ Error polling rewards:", error);
       }
