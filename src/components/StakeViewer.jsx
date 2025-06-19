@@ -8,6 +8,7 @@ import StakesTable from "./StakesTable";
 
 export default function StakeViewer() {
   const [address, setAddress] = useState("");
+  const [addressList, setAddressList] = useState([]);
   const [stakes, setStakes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -19,11 +20,50 @@ export default function StakeViewer() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const networkRef = useRef(network);
   const pollingIntervalRef = useRef(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const inputRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   // Update ref when network changes
   useEffect(() => {
     networkRef.current = network;
   }, [network]);
+
+  // Load address list and address from localStorage on mount
+  useEffect(() => {
+    const savedAddress = localStorage.getItem("paca_stakes_address");
+    if (savedAddress) {
+      setAddress(savedAddress);
+    }
+    const savedList = localStorage.getItem("paca_stakes_address_list");
+    if (savedList) {
+      try {
+        setAddressList(JSON.parse(savedList));
+      } catch {
+        setAddressList([]);
+      }
+    }
+  }, []);
+
+  // Save address to localStorage whenever it changes, and update address list
+  useEffect(() => {
+    if (address) {
+      localStorage.setItem("paca_stakes_address", address);
+      setAddressList((prevList) => {
+        if (!prevList.includes(address)) {
+          const newList = [address, ...prevList].slice(0, 10); // keep max 10
+          localStorage.setItem(
+            "paca_stakes_address_list",
+            JSON.stringify(newList)
+          );
+          return newList;
+        }
+        return prevList;
+      });
+    } else {
+      localStorage.removeItem("paca_stakes_address");
+    }
+  }, [address]);
 
   const fetchRewards = useCallback(
     async (chainId) => {
@@ -277,19 +317,160 @@ export default function StakeViewer() {
     NETWORKS[network].decimals
   );
 
+  // Handler to delete a single address from the list
+  const handleDeleteAddress = (addr) => {
+    setAddressList((prevList) => {
+      const newList = prevList.filter((a) => a !== addr);
+      localStorage.setItem("paca_stakes_address_list", JSON.stringify(newList));
+      // If the deleted address is the current address, clear the input
+      if (address === addr) {
+        setAddress("");
+        localStorage.removeItem("paca_stakes_address");
+      }
+      return newList;
+    });
+  };
+
+  // Handler to clear all addresses
+  const handleClearAllAddresses = () => {
+    setAddressList([]);
+    localStorage.removeItem("paca_stakes_address_list");
+    setAddress("");
+    localStorage.removeItem("paca_stakes_address");
+    setShowDropdown(false);
+  };
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target)
+      ) {
+        setShowDropdown(false);
+      }
+    }
+    if (showDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showDropdown]);
+
   return (
     <div className="w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-white shadow rounded">
       <h1 className="text-3xl font-bold mb-6 text-center">
         Stake Viewer ({NETWORKS[network].name})
       </h1>
       <div className="flex flex-col sm:flex-row gap-2 mb-4 w-full">
-        <input
-          type="text"
-          placeholder="Enter wallet address"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          className="border p-2 w-full rounded shadow-sm text-base"
-        />
+        <div className="relative w-full flex flex-row gap-2">
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Enter wallet address"
+            value={address}
+            onChange={(e) => {
+              setAddress(e.target.value);
+              setShowDropdown(false); // close dropdown on manual input
+            }}
+            onFocus={() => {
+              if (addressList.length > 0 && address !== "")
+                setShowDropdown(true);
+            }}
+            className="border p-2 w-full rounded shadow-sm text-base"
+            autoComplete="off"
+            onPaste={(e) => {
+              // Ensure pasted value replaces the input
+              e.preventDefault();
+              const pasted = e.clipboardData.getData("text");
+              setAddress(pasted);
+              setShowDropdown(false);
+              setTimeout(() => {
+                if (inputRef.current) inputRef.current.select();
+              }, 0);
+            }}
+          />
+          {addressList.length > 0 && (
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 bg-white px-1"
+              onClick={() => setShowDropdown((v) => !v)}
+              tabIndex={-1}
+              aria-label="Show previous addresses"
+            >
+              ▼
+            </button>
+          )}
+          {showDropdown && addressList.length > 0 && (
+            <ul
+              ref={dropdownRef}
+              className="absolute z-10 left-0 right-0 mt-1 bg-white border rounded shadow max-h-64 overflow-auto text-base"
+            >
+              <li
+                className="px-3 py-2 cursor-pointer hover:bg-blue-100 font-semibold text-blue-700 border-b"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setShowDropdown(false);
+                  setAddress("");
+                  setTimeout(() => {
+                    if (inputRef.current) {
+                      inputRef.current.focus();
+                      inputRef.current.select();
+                    }
+                  }, 0);
+                }}
+              >
+                + Add new address…
+              </li>
+              {addressList.map((addr) => (
+                <li
+                  key={addr}
+                  className={`flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-blue-100 ${
+                    addr === address ? "bg-blue-50" : ""
+                  }`}
+                >
+                  <span
+                    className="flex-1"
+                    onClick={() => {
+                      setAddress(addr);
+                      setShowDropdown(false);
+                      setTimeout(() => {
+                        if (inputRef.current) {
+                          inputRef.current.blur(); // blur to prevent dropdown reopening
+                        }
+                      }, 0);
+                    }}
+                  >
+                    {addr}
+                  </span>
+                  <button
+                    className="ml-2 text-gray-400 hover:text-red-500 px-1"
+                    title="Delete address"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteAddress(addr);
+                    }}
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+              <li className="border-t px-3 py-2 text-center">
+                <button
+                  className="text-sm text-red-600 hover:underline"
+                  onClick={handleClearAllAddresses}
+                >
+                  Clear All
+                </button>
+              </li>
+            </ul>
+          )}
+        </div>
         <button
           onClick={fetchAllChains}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full sm:w-auto"
