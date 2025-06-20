@@ -1,5 +1,5 @@
 import React from "react";
-import { formatCurrency, formatDate } from "../utils/formatters";
+import { formatCurrency, formatDate, daysLeft } from "../utils/formatters";
 import { NETWORKS } from "../constants/networks";
 
 export default function StakesTable({
@@ -67,9 +67,9 @@ export default function StakesTable({
               </th>
               <th
                 className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-white"
-                onClick={() => requestSort("lastClaimed")}
+                onClick={() => requestSort("daysLeft")}
               >
-                Last Claimed {getSortIcon("lastClaimed")}
+                Days Left {getSortIcon("daysLeft")}
               </th>
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold dark:text-white">
                 Status
@@ -95,10 +95,10 @@ export default function StakesTable({
                   {formatCurrency(stake.dailyEarnings)}
                 </td>
                 <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
-                  {formatDate(Number(stake.unlockTime) * 1000)}
+                  {formatDate(stake.unlockTime)}
                 </td>
                 <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
-                  {formatDate(Number(stake.lastClaimed) * 1000)}
+                  {daysLeft(stake.unlockTime)}
                 </td>
                 <td className="border border-gray-300 dark:border-gray-600 px-4 py-2">
                   <span
