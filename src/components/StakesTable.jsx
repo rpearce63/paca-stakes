@@ -102,7 +102,9 @@ export default function StakesTable({
                   {formatDate(stake.unlockTime)}
                 </td>
                 <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
-                  {formatTimeLeft(stake.unlockTime)}
+                  {stake.complete && formatTimeLeft(stake.unlockTime) !== "0"
+                    ? "0"
+                    : formatTimeLeft(stake.unlockTime)}
                 </td>
                 <td className="border border-gray-300 dark:border-gray-600 px-4 py-2">
                   <span
