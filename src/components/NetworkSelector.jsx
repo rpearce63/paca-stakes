@@ -1,24 +1,22 @@
 import React from "react";
 import { NETWORKS } from "../constants/networks";
 
-const NetworkSelector = ({ network, onNetworkChange }) => {
+export default function NetworkSelector({ network, onNetworkChange }) {
   return (
-    <div className="flex gap-4 mb-6">
-      {Object.entries(NETWORKS).map(([chainId, networkConfig]) => (
-        <label key={chainId} className="flex items-center">
-          <input
-            type="radio"
-            name="network"
-            value={chainId}
-            checked={network === chainId}
-            onChange={() => onNetworkChange(chainId)}
-            className="mr-2"
-          />
-          {networkConfig.name} ({networkConfig.token})
-        </label>
+    <div className="flex flex-wrap gap-2 mb-4">
+      {Object.keys(NETWORKS).map((chainId) => (
+        <button
+          key={chainId}
+          onClick={() => onNetworkChange(chainId)}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+            network === chainId
+              ? "bg-blue-600 dark:bg-blue-500 text-white shadow-md"
+              : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+          }`}
+        >
+          {NETWORKS[chainId].name}
+        </button>
       ))}
     </div>
   );
-};
-
-export default NetworkSelector;
+}

@@ -363,8 +363,8 @@ export default function StakeViewer() {
   }, [showDropdown]);
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-white shadow rounded">
-      <h1 className="text-3xl font-bold mb-6 text-center">
+    <div className="max-w-5xl mx-auto p-6 bg-white dark:bg-gray-800 shadow rounded dark:shadow-gray-900/50">
+      <h1 className="text-3xl font-bold mb-6 text-center dark:text-white">
         Stake Viewer ({NETWORKS[network].name})
       </h1>
       <div className="flex flex-col sm:flex-row gap-2 mb-4 w-full">
@@ -382,7 +382,7 @@ export default function StakeViewer() {
               if (addressList.length > 0 && address !== "")
                 setShowDropdown(true);
             }}
-            className="border p-2 w-full rounded shadow-sm text-base"
+            className="border border-gray-300 dark:border-gray-600 p-2 w-full rounded shadow-sm text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
             autoComplete="off"
             onPaste={(e) => {
               // Ensure pasted value replaces the input
@@ -398,7 +398,7 @@ export default function StakeViewer() {
           {addressList.length > 0 && (
             <button
               type="button"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 bg-white px-1"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white dark:bg-gray-700 px-1"
               onClick={() => setShowDropdown((v) => !v)}
               tabIndex={-1}
               aria-label="Show previous addresses"
@@ -409,10 +409,10 @@ export default function StakeViewer() {
           {showDropdown && addressList.length > 0 && (
             <ul
               ref={dropdownRef}
-              className="absolute z-10 left-0 right-0 mt-1 bg-white border rounded shadow max-h-64 overflow-auto text-base"
+              className="absolute z-10 left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow max-h-64 overflow-auto text-base"
             >
               <li
-                className="px-3 py-2 cursor-pointer hover:bg-blue-100 font-semibold text-blue-700 border-b"
+                className="px-3 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-600 font-semibold text-blue-700 dark:text-blue-400 border-b border-gray-200 dark:border-gray-600"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                   setShowDropdown(false);
@@ -430,12 +430,12 @@ export default function StakeViewer() {
               {addressList.map((addr) => (
                 <li
                   key={addr}
-                  className={`flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-blue-100 ${
-                    addr === address ? "bg-blue-50" : ""
+                  className={`flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-600 ${
+                    addr === address ? "bg-blue-50 dark:bg-gray-600" : ""
                   }`}
                 >
                   <span
-                    className="flex-1"
+                    className="flex-1 dark:text-white"
                     onClick={() => {
                       setAddress(addr);
                       setShowDropdown(false);
@@ -449,7 +449,7 @@ export default function StakeViewer() {
                     {addr}
                   </span>
                   <button
-                    className="ml-2 text-gray-400 hover:text-red-500 px-1"
+                    className="ml-2 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 px-1"
                     title="Delete address"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -460,9 +460,9 @@ export default function StakeViewer() {
                   </button>
                 </li>
               ))}
-              <li className="border-t px-3 py-2 text-center">
+              <li className="border-t border-gray-200 dark:border-gray-600 px-3 py-2 text-center">
                 <button
-                  className="text-sm text-red-600 hover:underline"
+                  className="text-sm text-red-600 dark:text-red-400 hover:underline"
                   onClick={handleClearAllAddresses}
                 >
                   Clear All
@@ -473,13 +473,15 @@ export default function StakeViewer() {
         </div>
         <button
           onClick={fetchAllChains}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full sm:w-auto"
+          className="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-600 w-full sm:w-auto transition-colors duration-200"
         >
           {loading ? "Loading..." : "Get Stakes"}
         </button>
       </div>
       <NetworkSelector network={network} onNetworkChange={updateChain} />
-      {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
+      {error && (
+        <p className="text-red-600 dark:text-red-400 mb-4 text-sm">{error}</p>
+      )}
       {Object.keys(chainTotals).length > 0 && (
         <ChainSummaryTable chainTotals={chainTotals} />
       )}
