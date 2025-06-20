@@ -38,3 +38,28 @@ export const daysLeft = (unlockTimestamp) => {
   const diffMs = unlockDate - now;
   return diffMs > 0 ? Math.floor(diffMs / (1000 * 60 * 60 * 24)) : 0;
 };
+
+export const secondsLeft = (unlockTimestamp) => {
+  if (!unlockTimestamp) return 0;
+  const now = Date.now();
+  const unlockDate = new Date(Number(unlockTimestamp) * 1000);
+  const diffMs = unlockDate - now;
+  return diffMs > 0 ? Math.floor(diffMs / 1000) : 0;
+};
+
+export const formatTimeLeft = (unlockTimestamp) => {
+  const seconds = secondsLeft(unlockTimestamp);
+  if (seconds <= 0) return "0";
+  const days = Math.floor(seconds / (60 * 60 * 24));
+  const hours = Math.floor((seconds % (60 * 60 * 24)) / (60 * 60));
+
+  if (days >= 7) {
+    return `${days}d`;
+  } else if (days >= 2) {
+    return `${days}d:${hours}h`;
+  } else {
+    const totalHours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    return `${totalHours}h:${mins}m`;
+  }
+};
