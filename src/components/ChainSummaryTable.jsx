@@ -1,27 +1,25 @@
 import React from "react";
-import { NETWORKS } from "../constants/networks";
 import { formatCurrency } from "../utils/formatters";
+import { NETWORKS } from "../constants/networks";
 
-const ChainSummaryTable = ({ chainTotals }) => {
-  const totalStakedAcrossChains = Object.values(chainTotals).reduce(
-    (acc, chain) => acc + chain.totalStaked,
+export default function ChainSummaryTable({ chainTotals }) {
+  const totalStaked = Object.values(chainTotals).reduce(
+    (sum, chain) => sum + chain.totalStaked,
     0
   );
-  const totalRewardsAcrossChains = Object.values(chainTotals).reduce(
-    (acc, chain) => acc + chain.rewards,
+  const totalRewards = Object.values(chainTotals).reduce(
+    (sum, chain) => sum + chain.rewards,
     0
   );
-  const totalDailyEarningsAcrossChains = Object.values(chainTotals).reduce(
-    (acc, chain) => acc + chain.dailyEarnings,
+  const totalDailyEarnings = Object.values(chainTotals).reduce(
+    (sum, chain) => sum + chain.dailyEarnings,
     0
   );
 
-  // Calculate total APRs across all chains
-  const totalDailyAPR =
-    totalStakedAcrossChains > 0
-      ? (totalDailyEarningsAcrossChains / totalStakedAcrossChains) * 100
-      : 0;
-  const totalAnnualAPR = totalDailyAPR * 365;
+  // Calculate average APRs
+  const avgDailyAPR =
+    totalStaked > 0 ? (totalDailyEarnings / totalStaked) * 100 : 0;
+  const avgAnnualAPR = avgDailyAPR * 365;
 
   return (
     <div className="mb-6">
@@ -39,7 +37,7 @@ const ChainSummaryTable = ({ chainTotals }) => {
                 Total Staked
               </th>
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
-                Rewards
+                Claimable Funds
               </th>
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
                 Daily Earnings
@@ -53,8 +51,7 @@ const ChainSummaryTable = ({ chainTotals }) => {
             </tr>
           </thead>
           <tbody>
-            {Object.entries(chainTotals).map(([chain, data]) => {
-              // Calculate APRs for this chain
+            {Object.entries(chainTotals).map(([chainId, data]) => {
               const dailyAPR =
                 data.totalStaked > 0
                   ? (data.dailyEarnings / data.totalStaked) * 100
@@ -63,11 +60,11 @@ const ChainSummaryTable = ({ chainTotals }) => {
 
               return (
                 <tr
-                  key={chain}
+                  key={chainId}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium dark:text-white">
-                    {NETWORKS[chain].name}
+                    {NETWORKS[chainId].name} ({NETWORKS[chainId].token})
                   </td>
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
                     {formatCurrency(data.totalStaked)}
@@ -92,19 +89,19 @@ const ChainSummaryTable = ({ chainTotals }) => {
                 TOTAL
               </td>
               <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                {formatCurrency(totalStakedAcrossChains)}
+                {formatCurrency(totalStaked)}
               </td>
               <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                {formatCurrency(totalRewardsAcrossChains)}
+                {formatCurrency(totalRewards)}
               </td>
               <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                {formatCurrency(totalDailyEarningsAcrossChains)}
+                {formatCurrency(totalDailyEarnings)}
               </td>
               <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                {totalDailyAPR.toFixed(2)}%
+                {avgDailyAPR.toFixed(2)}%
               </td>
               <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                {totalAnnualAPR.toFixed(2)}%
+                {avgAnnualAPR.toFixed(2)}%
               </td>
             </tr>
           </tbody>
@@ -112,6 +109,4 @@ const ChainSummaryTable = ({ chainTotals }) => {
       </div>
     </div>
   );
-};
-
-export default ChainSummaryTable;
+}

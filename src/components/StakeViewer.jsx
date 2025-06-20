@@ -47,7 +47,8 @@ export default function StakeViewer() {
 
   // Save address to localStorage whenever it changes, and update address list
   useEffect(() => {
-    if (address) {
+    // Only save valid addresses to localStorage
+    if (address && ethers.isAddress(address)) {
       localStorage.setItem("paca_stakes_address", address);
       setAddressList((prevList) => {
         if (!prevList.includes(address)) {
@@ -60,8 +61,16 @@ export default function StakeViewer() {
         }
         return prevList;
       });
-    } else {
+    } else if (!address) {
+      // Clear localStorage if address is empty
       localStorage.removeItem("paca_stakes_address");
+    }
+  }, [address]);
+
+  // Clear validation error when user types a new address
+  useEffect(() => {
+    if (error) {
+      setError("");
     }
   }, [address]);
 
@@ -152,6 +161,13 @@ export default function StakeViewer() {
   );
 
   const fetchAllChains = useCallback(async () => {
+    if (!ethers.isAddress(address)) {
+      setError("Invalid EVM address. Please check and try again.");
+      setStakes([]);
+      setChainTotals({});
+      return;
+    }
+
     if (!address) return;
 
     setLoading(true);
@@ -382,7 +398,11 @@ export default function StakeViewer() {
               if (addressList.length > 0 && address !== "")
                 setShowDropdown(true);
             }}
-            className="border border-gray-300 dark:border-gray-600 p-2 w-full rounded shadow-sm text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
+            className={`border p-2 w-full rounded shadow-sm text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none ${
+              error
+                ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400"
+                : "border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400"
+            }`}
             autoComplete="off"
             onPaste={(e) => {
               // Ensure pasted value replaces the input

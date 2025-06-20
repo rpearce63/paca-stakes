@@ -1,9 +1,5 @@
 import React from "react";
-import {
-  formatCurrency,
-  formatDate,
-  formatTimeLeft,
-} from "../utils/formatters";
+import { formatCurrency, formatTimeLeft } from "../utils/formatters";
 import { NETWORKS } from "../constants/networks";
 
 export default function StakesTable({
@@ -49,13 +45,13 @@ export default function StakesTable({
                 className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-white"
                 onClick={() => requestSort("amount")}
               >
-                Amount {getSortIcon("amount")}
+                Value {getSortIcon("amount")}
               </th>
               <th
                 className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-white"
                 onClick={() => requestSort("dailyRewardRate")}
               >
-                Daily Rate {getSortIcon("dailyRewardRate")}
+                Daily % {getSortIcon("dailyRewardRate")}
               </th>
               <th
                 className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-white"
@@ -65,15 +61,9 @@ export default function StakesTable({
               </th>
               <th
                 className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-white"
-                onClick={() => requestSort("unlockTime")}
-              >
-                Unlock Date {getSortIcon("unlockTime")}
-              </th>
-              <th
-                className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-white"
                 onClick={() => requestSort("daysLeft")}
               >
-                Time Left {getSortIcon("daysLeft")}
+                Unlock {getSortIcon("daysLeft")}
               </th>
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold dark:text-white">
                 Status
@@ -97,9 +87,6 @@ export default function StakesTable({
                 </td>
                 <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
                   {formatCurrency(stake.dailyEarnings)}
-                </td>
-                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
-                  {formatDate(stake.unlockTime)}
                 </td>
                 <td
                   className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white cursor-default"
