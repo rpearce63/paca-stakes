@@ -101,7 +101,14 @@ export default function StakesTable({
                 <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
                   {formatDate(stake.unlockTime)}
                 </td>
-                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                <td
+                  className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white cursor-default"
+                  title={(() => {
+                    if (!stake.unlockTime) return "";
+                    const date = new Date(Number(stake.unlockTime) * 1000);
+                    return `Unlocks: ${date.toLocaleString()}`;
+                  })()}
+                >
                   {stake.complete && formatTimeLeft(stake.unlockTime) !== "0"
                     ? "0"
                     : formatTimeLeft(stake.unlockTime)}
