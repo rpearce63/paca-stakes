@@ -121,7 +121,7 @@ const MultiWalletSummary = ({
           newAddressData[address] = data;
         }
       });
-
+      // console.log(newAddressData);
       setAddressData(newAddressData);
     } catch (error) {
       console.error("Error fetching multi-wallet data:", error);
@@ -181,7 +181,7 @@ const MultiWalletSummary = ({
 
   if (loading) {
     return (
-      <div className="w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-white shadow rounded">
+      <div className="w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-white dark:bg-gray-800 shadow rounded">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-center">
             Multi-Wallet Summary
@@ -202,7 +202,7 @@ const MultiWalletSummary = ({
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-white shadow rounded">
+    <div className="w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-white dark:bg-gray-800 shadow rounded">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-center">Multi-Wallet Summary</h1>
         <button

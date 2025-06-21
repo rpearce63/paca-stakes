@@ -13,7 +13,7 @@ export const NETWORKS = {
   },
   base: {
     name: "BASE",
-    rpc: "https://mainnet.base.org",
+    rpc: "https://base.llamarpc.com",
     contract: "0xDf2027318D27c4eD1C047B4d6247A7a705bb407b",
     token: "USDC",
     decimals: 6,
