@@ -5,6 +5,7 @@ import { sortData, getSortIcon } from "../utils/sorting";
 import NetworkSelector from "./NetworkSelector";
 import ChainSummaryTable from "./ChainSummaryTable";
 import StakesTable from "./StakesTable";
+import MultiWalletSummary from "./MultiWalletSummary";
 
 export default function StakeViewer() {
   const [address, setAddress] = useState("");
@@ -18,6 +19,7 @@ export default function StakeViewer() {
   const [hideCompleted, setHideCompleted] = useState(true);
   const [stakesCache, setStakesCache] = useState({});
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [viewMode, setViewMode] = useState("single");
   const networkRef = useRef(network);
   const pollingIntervalRef = useRef(null);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -378,11 +380,45 @@ export default function StakeViewer() {
     };
   }, [showDropdown]);
 
+  const handleAddressClick = (clickedAddress) => {
+    setAddress(clickedAddress);
+    setViewMode("single");
+  };
+
+  const handleBackToSingle = () => {
+    setViewMode("single");
+  };
+
+  const handleToggleViewMode = () => {
+    setViewMode(viewMode === "single" ? "multi" : "single");
+  };
+
+  // Show multi-wallet view if multiple addresses and in multi mode
+  if (viewMode === "multi" && addressList.length > 1) {
+    return (
+      <MultiWalletSummary
+        addressList={addressList}
+        onAddressClick={handleAddressClick}
+        onBackToSingle={handleBackToSingle}
+      />
+    );
+  }
+
   return (
-    <div className="max-w-5xl mx-auto p-6 bg-white dark:bg-gray-800 shadow rounded dark:shadow-gray-900/50">
-      <h1 className="text-3xl font-bold mb-6 text-center dark:text-white">
-        Stake Viewer ({NETWORKS[network].name})
-      </h1>
+    <div className="w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-white shadow rounded">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-center">
+          Stake Viewer ({NETWORKS[network].name})
+        </h1>
+        {addressList.length > 1 && (
+          <button
+            onClick={handleToggleViewMode}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            {viewMode === "single" ? "Multi-Wallet View" : "Single Wallet"}
+          </button>
+        )}
+      </div>
       <div className="flex flex-col sm:flex-row gap-2 mb-4 w-full">
         <div className="relative w-full flex flex-row gap-2">
           <input
