@@ -29,7 +29,7 @@ function App() {
       }`}
     >
       <div className="flex-1">
-        <div className="relative">
+        <div className="relative pt-20 sm:pt-16 md:pt-4">
           {/* Dark mode toggle button */}
           <button
             onClick={toggleDarkMode}

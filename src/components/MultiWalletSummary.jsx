@@ -216,24 +216,33 @@ const MultiWalletSummary = ({
       {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
 
       {/* Overall Summary Table */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4 dark:text-white">
-          Overall Summary ({addressList.length} wallets)
-        </h2>
+      <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <div className="flex items-center mb-4">
+          <svg
+            className="w-6 h-6 text-blue-600 dark:text-blue-400 mr-2"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h2 className="text-xl font-semibold dark:text-white">
+            Overall Summary ({addressList.length} wallets)
+          </h2>
+        </div>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow">
+          <table className="w-full border-collapse border border-blue-300 dark:border-blue-700 bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg">
             <thead>
-              <tr className="bg-gray-100 dark:bg-gray-700">
-                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold dark:text-white">
+              <tr className="bg-blue-100 dark:bg-blue-900/30">
+                <th className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-left font-semibold dark:text-white">
                   Chain
                 </th>
-                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
+                <th className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right font-semibold dark:text-white">
                   Total Staked
                 </th>
-                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
-                  Rewards
+                <th className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right font-semibold dark:text-white">
+                  Claimable Funds
                 </th>
-                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
+                <th className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right font-semibold dark:text-white">
                   Daily Earnings
                 </th>
               </tr>
@@ -242,39 +251,48 @@ const MultiWalletSummary = ({
               {Object.entries(overallTotals).map(([chain, data]) => (
                 <tr
                   key={chain}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="hover:bg-blue-50 dark:hover:bg-blue-900/10"
                 >
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium dark:text-white">
-                    {NETWORKS[chain].name}
+                  <td className="border border-blue-300 dark:border-blue-700 px-4 py-2 font-medium dark:text-white">
+                    {NETWORKS[chain].name} ({NETWORKS[chain].token})
                   </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                  <td className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right dark:text-white">
                     {formatCurrency(data.totalStaked)}
                   </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                  <td className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right dark:text-white">
                     {formatCurrency(data.rewards)}
                   </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                  <td className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right dark:text-white">
                     {formatCurrency(data.dailyEarnings)}
                   </td>
                 </tr>
               ))}
-              <tr className="bg-blue-50 dark:bg-blue-900/20 font-semibold">
-                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+              <tr className="bg-blue-200 dark:bg-blue-800/50 font-semibold">
+                <td className="border border-blue-300 dark:border-blue-700 px-4 py-2 dark:text-white">
                   TOTAL
                 </td>
-                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                <td className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right dark:text-white">
                   {formatCurrency(totalStakedAcrossChains)}
                 </td>
-                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                <td className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right dark:text-white">
                   {formatCurrency(totalRewardsAcrossChains)}
                 </td>
-                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                <td className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right dark:text-white">
                   {formatCurrency(totalDailyEarningsAcrossChains)}
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Visual Separator */}
+      <div className="mb-8 flex items-center">
+        <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+        <div className="px-4 text-gray-500 dark:text-gray-400 text-sm font-medium">
+          Individual Wallets
+        </div>
+        <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
       </div>
 
       {/* Individual Address Summaries */}
