@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
 import { NETWORKS } from "../constants/networks";
 import { formatCurrency } from "../utils/formatters";
+import { sortData, getSortIcon } from "../utils/sorting";
 
 const MultiWalletSummary = ({
   addressList,
@@ -12,6 +13,7 @@ const MultiWalletSummary = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [viewMode, setViewMode] = useState("compact"); // "expanded" or "compact"
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
   const fetchAddressData = useCallback(async (address) => {
     if (!ethers.isAddress(address)) return null;
@@ -138,6 +140,56 @@ const MultiWalletSummary = ({
 
   const shortenAddress = (address) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const requestSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortedCompactData = () => {
+    const compactData = addressList
+      .map((address) => {
+        const addressChainData = addressData[address];
+        if (!addressChainData) return null;
+
+        const addressTotalStaked = Object.values(addressChainData).reduce(
+          (acc, chain) => acc + chain.totalStaked,
+          0
+        );
+        const addressTotalRewards = Object.values(addressChainData).reduce(
+          (acc, chain) => acc + chain.rewards,
+          0
+        );
+        const addressTotalDailyEarnings = Object.values(
+          addressChainData
+        ).reduce((acc, chain) => acc + chain.dailyEarnings, 0);
+
+        // Calculate APR
+        const dailyAPR =
+          addressTotalStaked > 0
+            ? (addressTotalDailyEarnings / addressTotalStaked) * 100
+            : 0;
+        const annualAPR = dailyAPR * 365;
+
+        return {
+          address,
+          totalStaked: addressTotalStaked,
+          rewards: addressTotalRewards,
+          dailyEarnings: addressTotalDailyEarnings,
+          dailyAPR,
+          annualAPR,
+        };
+      })
+      .filter(Boolean);
+
+    if (sortConfig.key) {
+      return sortData(compactData, sortConfig);
+    }
+    return compactData;
   };
 
   const calculateOverallTotals = () => {
@@ -312,23 +364,57 @@ const MultiWalletSummary = ({
           <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow">
             <thead>
               <tr className="bg-gray-100 dark:bg-gray-700">
-                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold dark:text-white">
-                  Address
+                <th
+                  className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600"
+                  onClick={() => requestSort("address")}
+                >
+                  <div className="flex items-center">
+                    Address
+                    {getSortIcon(sortConfig, "address")}
+                  </div>
                 </th>
-                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
-                  Total Staked
+                <th
+                  className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600"
+                  onClick={() => requestSort("totalStaked")}
+                >
+                  <div className="flex items-center justify-end">
+                    Total Staked
+                    {getSortIcon(sortConfig, "totalStaked")}
+                  </div>
                 </th>
-                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
-                  Claimable Funds
+                <th
+                  className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600"
+                  onClick={() => requestSort("rewards")}
+                >
+                  <div className="flex items-center justify-end">
+                    Claimable Funds
+                    {getSortIcon(sortConfig, "rewards")}
+                  </div>
                 </th>
-                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
-                  Daily Earnings
+                <th
+                  className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600"
+                  onClick={() => requestSort("dailyEarnings")}
+                >
+                  <div className="flex items-center justify-end">
+                    Daily Earnings
+                    {getSortIcon(sortConfig, "dailyEarnings")}
+                  </div>
                 </th>
-                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
-                  Daily %
+                <th
+                  className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600"
+                  onClick={() => requestSort("dailyAPR")}
+                >
+                  <div className="flex items-center justify-end">
+                    Daily %{getSortIcon(sortConfig, "dailyAPR")}
+                  </div>
                 </th>
-                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
-                  Annual %
+                <th
+                  className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600"
+                  onClick={() => requestSort("annualAPR")}
+                >
+                  <div className="flex items-center justify-end">
+                    Annual %{getSortIcon(sortConfig, "annualAPR")}
+                  </div>
                 </th>
                 <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center font-semibold dark:text-white">
                   Actions
@@ -336,61 +422,39 @@ const MultiWalletSummary = ({
               </tr>
             </thead>
             <tbody>
-              {addressList.map((address) => {
-                const addressChainData = addressData[address];
-                if (!addressChainData) return null;
-
-                const addressTotalStaked = Object.values(
-                  addressChainData
-                ).reduce((acc, chain) => acc + chain.totalStaked, 0);
-                const addressTotalRewards = Object.values(
-                  addressChainData
-                ).reduce((acc, chain) => acc + chain.rewards, 0);
-                const addressTotalDailyEarnings = Object.values(
-                  addressChainData
-                ).reduce((acc, chain) => acc + chain.dailyEarnings, 0);
-
-                // Calculate APR
-                const dailyAPR =
-                  addressTotalStaked > 0
-                    ? (addressTotalDailyEarnings / addressTotalStaked) * 100
-                    : 0;
-                const annualAPR = dailyAPR * 365;
-
-                return (
-                  <tr
-                    key={address}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium dark:text-white">
-                      {shortenAddress(address)}
-                    </td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                      {formatCurrency(addressTotalStaked)}
-                    </td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                      {formatCurrency(addressTotalRewards)}
-                    </td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                      {formatCurrency(addressTotalDailyEarnings)}
-                    </td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                      {dailyAPR.toFixed(2)}%
-                    </td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                      {annualAPR.toFixed(2)}%
-                    </td>
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">
-                      <button
-                        onClick={() => onAddressClick(address)}
-                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
-                      >
-                        View Details
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+              {getSortedCompactData().map((data) => (
+                <tr
+                  key={data.address}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium dark:text-white">
+                    {shortenAddress(data.address)}
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                    {formatCurrency(data.totalStaked)}
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                    {formatCurrency(data.rewards)}
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                    {formatCurrency(data.dailyEarnings)}
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                    {data.dailyAPR.toFixed(2)}%
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                    {data.annualAPR.toFixed(2)}%
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">
+                    <button
+                      onClick={() => onAddressClick(data.address)}
+                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+                    >
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
