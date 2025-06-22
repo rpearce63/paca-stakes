@@ -11,6 +11,7 @@ const MultiWalletSummary = ({
   const [addressData, setAddressData] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [viewMode, setViewMode] = useState("compact"); // "expanded" or "compact"
 
   const fetchAddressData = useCallback(async (address) => {
     if (!ethers.isAddress(address)) return null;
@@ -205,12 +206,22 @@ const MultiWalletSummary = ({
     <div className="w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-white dark:bg-gray-800 shadow rounded">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-center">Multi-Wallet Summary</h1>
-        <button
-          onClick={onBackToSingle}
-          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-        >
-          Single Wallet
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() =>
+              setViewMode(viewMode === "expanded" ? "compact" : "expanded")
+            }
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            {viewMode === "expanded" ? "Compact View" : "Expanded View"}
+          </button>
+          <button
+            onClick={onBackToSingle}
+            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+          >
+            Single Wallet
+          </button>
+        </div>
       </div>
 
       {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
@@ -295,77 +306,64 @@ const MultiWalletSummary = ({
         <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
       </div>
 
-      {/* Individual Address Summaries */}
-      {addressList.map((address) => {
-        const addressChainData = addressData[address];
-        if (!addressChainData) return null;
+      {/* Compact View */}
+      {viewMode === "compact" && (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow">
+            <thead>
+              <tr className="bg-gray-100 dark:bg-gray-700">
+                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold dark:text-white">
+                  Address
+                </th>
+                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
+                  Total Staked
+                </th>
+                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
+                  Claimable Funds
+                </th>
+                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
+                  Daily Earnings
+                </th>
+                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
+                  Daily %
+                </th>
+                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
+                  Annual %
+                </th>
+                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center font-semibold dark:text-white">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {addressList.map((address) => {
+                const addressChainData = addressData[address];
+                if (!addressChainData) return null;
 
-        const addressTotalStaked = Object.values(addressChainData).reduce(
-          (acc, chain) => acc + chain.totalStaked,
-          0
-        );
-        const addressTotalRewards = Object.values(addressChainData).reduce(
-          (acc, chain) => acc + chain.rewards,
-          0
-        );
-        const addressTotalDailyEarnings = Object.values(
-          addressChainData
-        ).reduce((acc, chain) => acc + chain.dailyEarnings, 0);
+                const addressTotalStaked = Object.values(
+                  addressChainData
+                ).reduce((acc, chain) => acc + chain.totalStaked, 0);
+                const addressTotalRewards = Object.values(
+                  addressChainData
+                ).reduce((acc, chain) => acc + chain.rewards, 0);
+                const addressTotalDailyEarnings = Object.values(
+                  addressChainData
+                ).reduce((acc, chain) => acc + chain.dailyEarnings, 0);
 
-        return (
-          <div key={address} className="mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold dark:text-white">
-                {shortenAddress(address)}
-              </h3>
-              <button
-                onClick={() => onAddressClick(address)}
-                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
-              >
-                View Details
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow">
-                <thead>
-                  <tr className="bg-gray-100 dark:bg-gray-700">
-                    <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold dark:text-white">
-                      Chain
-                    </th>
-                    <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
-                      Total Staked
-                    </th>
-                    <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
-                      Rewards
-                    </th>
-                    <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
-                      Daily Earnings
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(addressChainData).map(([chain, data]) => (
-                    <tr
-                      key={chain}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium dark:text-white">
-                        {NETWORKS[chain].name}
-                      </td>
-                      <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                        {formatCurrency(data.totalStaked)}
-                      </td>
-                      <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                        {formatCurrency(data.rewards)}
-                      </td>
-                      <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                        {formatCurrency(data.dailyEarnings)}
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="bg-gray-50 dark:bg-gray-700 font-semibold">
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
-                      TOTAL
+                // Calculate APR
+                const dailyAPR =
+                  addressTotalStaked > 0
+                    ? (addressTotalDailyEarnings / addressTotalStaked) * 100
+                    : 0;
+                const annualAPR = dailyAPR * 365;
+
+                return (
+                  <tr
+                    key={address}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium dark:text-white">
+                      {shortenAddress(address)}
                     </td>
                     <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
                       {formatCurrency(addressTotalStaked)}
@@ -376,13 +374,120 @@ const MultiWalletSummary = ({
                     <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
                       {formatCurrency(addressTotalDailyEarnings)}
                     </td>
+                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                      {dailyAPR.toFixed(2)}%
+                    </td>
+                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                      {annualAPR.toFixed(2)}%
+                    </td>
+                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center">
+                      <button
+                        onClick={() => onAddressClick(address)}
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+                      >
+                        View Details
+                      </button>
+                    </td>
                   </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        );
-      })}
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Expanded View */}
+      {viewMode === "expanded" && (
+        <>
+          {addressList.map((address) => {
+            const addressChainData = addressData[address];
+            if (!addressChainData) return null;
+
+            const addressTotalStaked = Object.values(addressChainData).reduce(
+              (acc, chain) => acc + chain.totalStaked,
+              0
+            );
+            const addressTotalRewards = Object.values(addressChainData).reduce(
+              (acc, chain) => acc + chain.rewards,
+              0
+            );
+            const addressTotalDailyEarnings = Object.values(
+              addressChainData
+            ).reduce((acc, chain) => acc + chain.dailyEarnings, 0);
+
+            return (
+              <div key={address} className="mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold dark:text-white">
+                    {shortenAddress(address)}
+                  </h3>
+                  <button
+                    onClick={() => onAddressClick(address)}
+                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+                  >
+                    View Details
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow">
+                    <thead>
+                      <tr className="bg-gray-100 dark:bg-gray-700">
+                        <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold dark:text-white">
+                          Chain
+                        </th>
+                        <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
+                          Total Staked
+                        </th>
+                        <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
+                          Claimable Funds
+                        </th>
+                        <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
+                          Daily Earnings
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(addressChainData).map(([chain, data]) => (
+                        <tr
+                          key={chain}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium dark:text-white">
+                            {NETWORKS[chain].name}
+                          </td>
+                          <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                            {formatCurrency(data.totalStaked)}
+                          </td>
+                          <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                            {formatCurrency(data.rewards)}
+                          </td>
+                          <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                            {formatCurrency(data.dailyEarnings)}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="bg-gray-50 dark:bg-gray-700 font-semibold">
+                        <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                          TOTAL
+                        </td>
+                        <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                          {formatCurrency(addressTotalStaked)}
+                        </td>
+                        <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                          {formatCurrency(addressTotalRewards)}
+                        </td>
+                        <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                          {formatCurrency(addressTotalDailyEarnings)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
     </div>
   );
 };
