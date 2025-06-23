@@ -74,7 +74,7 @@ export default function StakeViewer() {
     if (error) {
       setError("");
     }
-  }, [address]);
+  }, [address, error]);
 
   const fetchRewards = useCallback(
     async (chainId) => {
