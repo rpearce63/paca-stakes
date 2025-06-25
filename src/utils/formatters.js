@@ -55,7 +55,7 @@ export const formatTimeLeft = (unlockTimestamp) => {
 
   if (days >= 7) {
     return `${days}d`;
-  } else if (days >= 2) {
+  } else if (days >= 1) {
     return `${days}d:${hours}h`;
   } else {
     const totalHours = Math.floor(seconds / 3600);

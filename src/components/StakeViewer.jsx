@@ -220,25 +220,22 @@ export default function StakeViewer() {
   const startPolling = useCallback(() => {
     if (!address) return;
 
-    // Clear any existing interval
+    // Clear any existing intervals
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
     }
+    if (pollingIntervalRef.currentStake) {
+      clearInterval(pollingIntervalRef.currentStake);
+    }
 
-    // Start polling every minute (60000ms)
+    // Start polling rewards every minute (60000ms)
     pollingIntervalRef.current = setInterval(async () => {
-      //console.log("🔄 Polling for updated rewards...");
-
       try {
-        // Fetch fresh rewards for all chains
         const rewardsPromises = Object.keys(NETWORKS).map(async (chainId) => {
           const rewards = await fetchRewards(chainId);
           return { chainId, rewards };
         });
-
         const rewardsResults = await Promise.all(rewardsPromises);
-
-        // Update chain totals with fresh rewards
         setChainTotals((prev) => {
           const updated = { ...prev };
           rewardsResults.forEach(({ chainId, rewards }) => {
@@ -251,19 +248,26 @@ export default function StakeViewer() {
           });
           return updated;
         });
-
-        //console.log("✅ Rewards updated via polling");
       } catch (error) {
         console.error("❌ Error polling rewards:", error);
       }
-    }, 60000); // 60 seconds
-  }, [address, fetchRewards]);
+    }, 60000); // 1 minute
+
+    // Start polling stake data every 5 minutes (300000ms)
+    pollingIntervalRef.currentStake = setInterval(() => {
+      fetchAllChains();
+    }, 300000); // 5 minutes
+  }, [address, fetchRewards, fetchAllChains]);
 
   // Stop polling
   const stopPolling = useCallback(() => {
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
+    }
+    if (pollingIntervalRef.currentStake) {
+      clearInterval(pollingIntervalRef.currentStake);
+      pollingIntervalRef.currentStake = null;
     }
   }, []);
 
