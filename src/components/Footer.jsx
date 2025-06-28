@@ -16,7 +16,7 @@ const Footer = () => {
               © {new Date().getFullYear()} Paca Stakes Viewer. All rights
               reserved.
             </p>
-            <p className="mt-1">Pelican Point Consulting</p>
+            <p className="mt-1">brought to you by rpearce63 & Pelican Point Consulting</p>
           </div>
           <div className="text-sm text-gray-400 dark:text-gray-500 text-center md:text-right">
             <p>Version: {version}</p>
