@@ -6,6 +6,7 @@ import NetworkSelector from "./NetworkSelector";
 import ChainSummaryTable from "./ChainSummaryTable";
 import StakesTable from "./StakesTable";
 import MultiWalletSummary from "./MultiWalletSummary";
+import WalletConnect from "./WalletConnect";
 
 export default function StakeViewer() {
   const [address, setAddress] = useState("");
@@ -410,6 +411,11 @@ export default function StakeViewer() {
 
   return (
     <div className="w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-white dark:bg-gray-800 shadow rounded">
+      {/* Wallet connection at the top */}
+      <div className="flex justify-end mb-4">
+        <WalletConnect onAddressChange={setAddress} currentNetwork={network} />
+      </div>
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-center">
           Stake Viewer ({NETWORKS[network].name})
@@ -423,7 +429,8 @@ export default function StakeViewer() {
           </button>
         )}
       </div>
-      <div className="flex flex-col sm:flex-row gap-2 mb-4 w-full">
+      <div className="flex flex-col gap-4 mb-4 w-full">
+        {/* Manual address input (primary method) */}
         <div className="relative w-full flex flex-row gap-2">
           <input
             ref={inputRef}
@@ -531,9 +538,11 @@ export default function StakeViewer() {
             </ul>
           )}
         </div>
+
         <button
           onClick={fetchAllChains}
-          className="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-600 w-full sm:w-auto transition-colors duration-200"
+          disabled={!address}
+          className="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed w-full transition-colors duration-200"
         >
           {loading ? "Loading..." : "Get Stakes"}
         </button>
