@@ -85,7 +85,12 @@ export default function StakesTable({
                 <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
                   {Number(stake.dailyRewardRate) / 100}%
                 </td>
-                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                <td
+                  className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white"
+                  title={`Weekly: ${formatCurrency(
+                    stake.dailyEarnings * 7
+                  )}\nMonthly: ${formatCurrency(stake.dailyEarnings * 30)}`}
+                >
                   {formatCurrency(stake.dailyEarnings)}
                 </td>
                 <td

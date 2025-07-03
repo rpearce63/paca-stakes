@@ -72,7 +72,12 @@ export default function ChainSummaryTable({ chainTotals }) {
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
                     {formatCurrency(data.rewards)}
                   </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                  <td
+                    className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white"
+                    title={`Weekly: ${formatCurrency(
+                      data.dailyEarnings * 7
+                    )}\nMonthly: ${formatCurrency(data.dailyEarnings * 30)}`}
+                  >
                     {formatCurrency(data.dailyEarnings)}
                   </td>
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
@@ -94,7 +99,12 @@ export default function ChainSummaryTable({ chainTotals }) {
               <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
                 {formatCurrency(totalRewards)}
               </td>
-              <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+              <td
+                className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white"
+                title={`Weekly: ${formatCurrency(
+                  totalDailyEarnings * 7
+                )}\nMonthly: ${formatCurrency(totalDailyEarnings * 30)}`}
+              >
                 {formatCurrency(totalDailyEarnings)}
               </td>
               <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">

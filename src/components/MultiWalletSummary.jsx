@@ -325,7 +325,12 @@ const MultiWalletSummary = ({
                   <td className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right dark:text-white">
                     {formatCurrency(data.rewards)}
                   </td>
-                  <td className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right dark:text-white">
+                  <td
+                    className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right dark:text-white"
+                    title={`Weekly: ${formatCurrency(
+                      data.dailyEarnings * 7
+                    )}\nMonthly: ${formatCurrency(data.dailyEarnings * 30)}`}
+                  >
                     {formatCurrency(data.dailyEarnings)}
                   </td>
                 </tr>
@@ -340,7 +345,14 @@ const MultiWalletSummary = ({
                 <td className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right dark:text-white">
                   {formatCurrency(totalRewardsAcrossChains)}
                 </td>
-                <td className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right dark:text-white">
+                <td
+                  className="border border-blue-300 dark:border-blue-700 px-4 py-2 text-right dark:text-white"
+                  title={`Weekly: ${formatCurrency(
+                    totalDailyEarningsAcrossChains * 7
+                  )}\nMonthly: ${formatCurrency(
+                    totalDailyEarningsAcrossChains * 30
+                  )}`}
+                >
                   {formatCurrency(totalDailyEarningsAcrossChains)}
                 </td>
               </tr>
@@ -436,7 +448,12 @@ const MultiWalletSummary = ({
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
                     {formatCurrency(data.rewards)}
                   </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                  <td
+                    className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white"
+                    title={`Weekly: ${formatCurrency(
+                      data.dailyEarnings * 7
+                    )}\nMonthly: ${formatCurrency(data.dailyEarnings * 30)}`}
+                  >
                     {formatCurrency(data.dailyEarnings)}
                   </td>
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
@@ -525,7 +542,14 @@ const MultiWalletSummary = ({
                           <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
                             {formatCurrency(data.rewards)}
                           </td>
-                          <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                          <td
+                            className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white"
+                            title={`Weekly: ${formatCurrency(
+                              data.dailyEarnings * 7
+                            )}\nMonthly: ${formatCurrency(
+                              data.dailyEarnings * 30
+                            )}`}
+                          >
                             {formatCurrency(data.dailyEarnings)}
                           </td>
                         </tr>
@@ -540,7 +564,14 @@ const MultiWalletSummary = ({
                         <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
                           {formatCurrency(addressTotalRewards)}
                         </td>
-                        <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                        <td
+                          className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white"
+                          title={`Weekly: ${formatCurrency(
+                            addressTotalDailyEarnings * 7
+                          )}\nMonthly: ${formatCurrency(
+                            addressTotalDailyEarnings * 30
+                          )}`}
+                        >
                           {formatCurrency(addressTotalDailyEarnings)}
                         </td>
                       </tr>
