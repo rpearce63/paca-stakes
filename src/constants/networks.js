@@ -5,7 +5,7 @@ import { ABI as SONIC_ABI } from "../contracts/PacaABI_SONIC";
 export const NETWORKS = {
   bsc: {
     name: "BSC",
-    rpc: "https://bsc-dataseed.binance.org/",
+    rpc: "https://bsc-rpc.publicnode.com",
     contract: "0x3fF44D639a4982A4436f6d737430141aBE68b4E1",
     token: "USDT",
     decimals: 18,
