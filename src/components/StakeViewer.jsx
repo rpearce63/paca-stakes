@@ -15,7 +15,10 @@ export default function StakeViewer() {
   const [error, setError] = useState("");
   const [network, setNetwork] = useState("bsc");
   const [chainTotals, setChainTotals] = useState({});
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "daysLeft",
+    direction: "asc",
+  });
   const [hideCompleted, setHideCompleted] = useState(true);
   const [stakesCache, setStakesCache] = useState({});
   const [isInitialLoad, setIsInitialLoad] = useState(true);
