@@ -2,12 +2,15 @@ import React, { useState, useEffect } from "react";
 import "./App.css";
 import StakeViewer from "./components/StakeViewer";
 import Footer from "./components/Footer";
+import Marketplace from "./components/Marketplace";
+// Marketplace import will be added after scaffold
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem("darkMode");
     return saved ? JSON.parse(saved) : false;
   });
+  const [activeTab, setActiveTab] = useState("stakes"); // "stakes" or "marketplace"
 
   useEffect(() => {
     localStorage.setItem("darkMode", JSON.stringify(darkMode));
@@ -24,8 +27,8 @@ function App() {
 
   return (
     <div
-      className={`min-h-screen flex flex-col transition-colors duration-200 ${
-        darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
+      className={`min-h-screen flex flex-col transition-colors duration-200 bg-white dark:bg-gray-900 ${
+        darkMode ? "text-white" : "text-gray-900"
       }`}
     >
       <div className="flex-1">
@@ -54,7 +57,32 @@ function App() {
               </svg>
             )}
           </button>
-          <StakeViewer />
+          {/* Tabs */}
+          <div className="flex justify-center mb-8 mt-2 gap-2">
+            <button
+              className={`px-4 py-2 rounded-t-lg font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${
+                activeTab === "stakes"
+                  ? "bg-blue-600 dark:bg-blue-500 text-white shadow"
+                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+              }`}
+              onClick={() => setActiveTab("stakes")}
+            >
+              Stake Viewer
+            </button>
+            <button
+              className={`px-4 py-2 rounded-t-lg font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${
+                activeTab === "marketplace"
+                  ? "bg-blue-600 dark:bg-blue-500 text-white shadow"
+                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+              }`}
+              onClick={() => setActiveTab("marketplace")}
+            >
+              Marketplace
+            </button>
+          </div>
+          {/* Tab Content */}
+          {activeTab === "stakes" && <StakeViewer />}
+          {activeTab === "marketplace" && <Marketplace />}
         </div>
       </div>
       <Footer />
