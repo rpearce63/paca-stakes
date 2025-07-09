@@ -124,7 +124,9 @@ export default function MarketplaceTable({ chainId, stakes }) {
                     {(Number(stake.dailyRewardRate) / 100).toFixed(2)}%
                   </td>
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                    {getEffectiveDailyRate(stake)}
+                    <span className="font-bold text-green-700 dark:text-green-300">
+                      {getEffectiveDailyRate(stake)}
+                    </span>
                   </td>
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
                     {formatCurrency(
