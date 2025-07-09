@@ -11,26 +11,26 @@ function MarketplaceSummary({
 }) {
   return (
     <div className="mb-8">
-      <div className="overflow-x-auto bg-blue-50 dark:bg-gray-900 rounded-xl shadow-md p-4 border border-blue-200 dark:border-gray-700">
+      <div className="overflow-x-auto bg-blue-50 dark:bg-gray-900 rounded-xl shadow-md p-2 sm:p-4 border border-blue-200 dark:border-gray-700">
         <table className="w-full border-collapse">
           <thead>
             <tr>
-              <th className="px-4 py-2 text-left font-semibold text-blue-800 dark:text-blue-200 text-sm">
+              <th className="px-2 sm:px-4 py-1 sm:py-2 text-left font-semibold text-blue-800 dark:text-blue-200 text-xs sm:text-sm">
                 Chain
               </th>
-              <th className="px-4 py-2 text-right font-semibold text-blue-800 dark:text-blue-200 text-sm">
+              <th className="px-2 sm:px-4 py-1 sm:py-2 text-right font-semibold text-blue-800 dark:text-blue-200 text-xs sm:text-sm">
                 Total Stakes
               </th>
-              <th className="px-4 py-2 text-right font-semibold text-blue-800 dark:text-blue-200 text-sm">
+              <th className="px-2 sm:px-4 py-1 sm:py-2 text-right font-semibold text-blue-800 dark:text-blue-200 text-xs sm:text-sm">
                 Total Value
               </th>
-              <th className="px-4 py-2 text-right font-semibold text-blue-800 dark:text-blue-200 text-sm">
+              <th className="px-2 sm:px-4 py-1 sm:py-2 text-right font-semibold text-blue-800 dark:text-blue-200 text-xs sm:text-sm">
                 Avg. Price
               </th>
-              <th className="px-4 py-2 text-right font-semibold text-blue-800 dark:text-blue-200 text-sm">
+              <th className="px-2 sm:px-4 py-1 sm:py-2 text-right font-semibold text-blue-800 dark:text-blue-200 text-xs sm:text-sm">
                 Price Range
               </th>
-              <th className="px-4 py-2 text-right font-semibold text-blue-800 dark:text-blue-200 text-sm">
+              <th className="px-2 sm:px-4 py-1 sm:py-2 text-right font-semibold text-blue-800 dark:text-blue-200 text-xs sm:text-sm">
                 Daily % Range
               </th>
             </tr>
@@ -64,9 +64,9 @@ function MarketplaceSummary({
                   key={chainId}
                   className="hover:bg-blue-100/60 dark:hover:bg-gray-800 transition"
                 >
-                  <td className="px-4 py-2 font-semibold text-blue-700 dark:text-blue-300 text-sm">
+                  <td className="px-2 sm:px-4 py-1 sm:py-2 font-semibold text-blue-700 dark:text-blue-300 text-xs sm:text-sm">
                     <button
-                      className={`inline-block rounded px-2 py-1 transition font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600 ${
+                      className={`inline-block rounded px-1 sm:px-2 py-0.5 sm:py-1 transition font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600 text-xs sm:text-sm ${
                         isSelected
                           ? "bg-blue-600 text-white dark:bg-blue-400 dark:text-gray-900 shadow"
                           : "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800"
@@ -76,19 +76,19 @@ function MarketplaceSummary({
                       {NETWORKS[chainId].name}
                     </button>
                   </td>
-                  <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-200 text-sm">
+                  <td className="px-2 sm:px-4 py-1 sm:py-2 text-right text-gray-700 dark:text-gray-200 text-xs sm:text-sm">
                     {stakes.length}
                   </td>
-                  <td className="px-4 py-2 text-right font-bold text-green-700 dark:text-green-300 text-base">
+                  <td className="px-2 sm:px-4 py-1 sm:py-2 text-right font-bold text-green-700 dark:text-green-300 text-xs sm:text-base">
                     {formatCurrency(totalNet)}
                   </td>
-                  <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-200 text-sm">
+                  <td className="px-2 sm:px-4 py-1 sm:py-2 text-right text-gray-700 dark:text-gray-200 text-xs sm:text-sm">
                     {formatCurrency(avgPrice)}
                   </td>
-                  <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-200 text-sm">
+                  <td className="px-2 sm:px-4 py-1 sm:py-2 text-right text-gray-700 dark:text-gray-200 text-xs sm:text-sm">
                     {formatCurrency(minPrice)} - {formatCurrency(maxPrice)}
                   </td>
-                  <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-200 text-sm">
+                  <td className="px-2 sm:px-4 py-1 sm:py-2 text-right text-gray-700 dark:text-gray-200 text-xs sm:text-sm">
                     {minDaily.toFixed(2)}% - {maxDaily.toFixed(2)}%
                   </td>
                 </tr>

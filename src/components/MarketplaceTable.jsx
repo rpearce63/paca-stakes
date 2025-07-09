@@ -35,29 +35,26 @@ export default function MarketplaceTable({ chainId, stakes }) {
         <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow">
           <thead>
             <tr className="bg-gray-100 dark:bg-gray-700">
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold dark:text-white">
+              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold sm:table-cell hidden dark:text-white">
                 Chain
               </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold dark:text-white">
+              <th className="border border-gray-300 dark:border-gray-600 px-1 py-2 text-left font-semibold dark:text-white w-16">
                 Stake ID
               </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold dark:text-white">
+              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold sm:table-cell hidden dark:text-white">
                 Seller
               </th>
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
                 Price
               </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
+              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white">
                 Stake Value
               </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
+              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white">
                 Bonus Amount
               </th>
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
                 Buyer Receives
-              </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
-                Daily Reward Rate
               </th>
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
                 <span className="relative group cursor-help">
@@ -68,6 +65,9 @@ export default function MarketplaceTable({ chainId, stakes }) {
                     which are received as a one-time bonus at purchase.
                   </span>
                 </span>
+              </th>
+              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white">
+                Daily Reward Rate
               </th>
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
                 Pending Rewards
@@ -81,13 +81,13 @@ export default function MarketplaceTable({ chainId, stakes }) {
                   key={idx}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white sm:table-cell hidden">
                     {NETWORKS[chainId].name}
                   </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                  <td className="border border-gray-300 dark:border-gray-600 px-1 py-2 dark:text-white w-16">
                     {stake.stakeId}
                   </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white sm:table-cell hidden">
                     {abbreviateAddress(stake.seller)}
                   </td>
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
@@ -95,12 +95,12 @@ export default function MarketplaceTable({ chainId, stakes }) {
                       Number(ethers.formatUnits(stake.price || 0, decimals))
                     )}
                   </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white sm:table-cell hidden">
                     {formatCurrency(
                       Number(ethers.formatUnits(stake.amount || 0, decimals))
                     )}
                   </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white sm:table-cell hidden">
                     {formatCurrency(
                       Number(
                         ethers.formatUnits(stake.bonusAmount || 0, decimals)
@@ -120,13 +120,13 @@ export default function MarketplaceTable({ chainId, stakes }) {
                       )
                     )}
                   </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                    {(Number(stake.dailyRewardRate) / 100).toFixed(2)}%
-                  </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white font-semibold">
                     <span className="font-bold text-green-700 dark:text-green-300">
                       {getEffectiveDailyRate(stake)}
                     </span>
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white sm:table-cell hidden">
+                    {(Number(stake.dailyRewardRate) / 100).toFixed(2)}%
                   </td>
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
                     {formatCurrency(
