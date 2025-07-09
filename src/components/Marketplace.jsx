@@ -11,7 +11,7 @@ function MarketplaceSummary({
 }) {
   return (
     <div className="mb-8">
-      <div className="bg-blue-50 dark:bg-gray-900 rounded-xl shadow-md p-4 border border-blue-200 dark:border-gray-700">
+      <div className="overflow-x-auto bg-blue-50 dark:bg-gray-900 rounded-xl shadow-md p-4 border border-blue-200 dark:border-gray-700">
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -162,15 +162,13 @@ export default function Marketplace() {
   }, [selectedChain]);
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-2 sm:p-4 md:p-6 bg-white dark:bg-gray-800 shadow rounded">
+    <div className="w-full min-h-screen max-w-6xl mx-auto p-2 sm:p-4 md:p-6 bg-white dark:bg-gray-800 shadow rounded flex flex-col">
       <MarketplaceSummary
         allStakesByChain={allStakesByChain}
         selectedChain={selectedChain}
         setSelectedChain={setSelectedChain}
       />
-      <div className="flex justify-between items-center mb-6">
-        {/* Marketplace title removed as per new design */}
-      </div>
+      <div className="flex justify-between items-center mb-6" />
       {loading ? (
         <div className="text-center text-gray-500 dark:text-gray-400 py-8">
           Loading marketplace stakes...
@@ -180,7 +178,9 @@ export default function Marketplace() {
           {error}
         </div>
       ) : (
-        <MarketplaceTable chainId={selectedChain} stakes={stakes} />
+        <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
+          <MarketplaceTable chainId={selectedChain} stakes={stakes} />
+        </div>
       )}
     </div>
   );
