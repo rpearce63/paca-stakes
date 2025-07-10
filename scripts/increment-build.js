@@ -11,6 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const envPath = path.join(__dirname, "..", ".env");
+const metaPath = path.join(__dirname, "..", "public", "meta.json");
 
 // Function to read and parse .env file
 function readEnvFile(filePath) {
@@ -65,11 +66,21 @@ function incrementBuildNumber(buildNumber) {
   return String(num + 1).padStart(3, "0");
 }
 
-// Function to update version (optional - you can customize this logic)
+// Function to update version (now implements semantic versioning)
 function updateVersion(version) {
-  // For now, just return the same version
-  // You can implement semantic versioning logic here
-  return version;
+  // Split version into major.minor.patch
+  const parts = version.split(".").map(Number);
+  let [major, minor, patch] = parts.length === 3 ? parts : [1, 0, 0];
+  patch += 1;
+  if (patch >= 10) {
+    patch = 0;
+    minor += 1;
+    if (minor >= 10) {
+      minor = 0;
+      major += 1;
+    }
+  }
+  return `${major}.${minor}.${patch}`;
 }
 
 // Main execution
@@ -98,6 +109,14 @@ try {
 
   // Write updated .env file
   writeEnvFile(envPath, updatedEnv);
+
+  // Write meta.json for frontend update checks
+  const meta = {
+    version: newVersion,
+    build: newBuildNumber,
+    date: newBuildDate,
+  };
+  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
 
   console.log(`✅ Build information updated:`);
   console.log(`   Version: ${newVersion}`);
