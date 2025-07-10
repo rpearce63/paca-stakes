@@ -87,6 +87,44 @@ If environment variables are not set, the footer will display:
 - Build: "dev"
 - Date: Current date
 
+## Commit Hook - Automatic Build Increment
+
+This project includes a Git commit hook that automatically increments the build number on each commit.
+
+### How it Works
+
+1. **Pre-commit Hook**: Before each commit, the hook runs `scripts/increment-build.js`
+2. **Build Increment**: The script reads the current `.env` file and increments the build number
+3. **Auto-commit**: The updated `.env` file is automatically added to the commit
+
+### Manual Build Increment
+
+You can manually increment the build information without committing:
+
+```bash
+npm run increment-build
+```
+
+### Customizing Build Logic
+
+The build increment logic can be customized in `scripts/increment-build.js`:
+
+- **Build Number**: Automatically increments (001, 002, 003, etc.)
+- **Version**: Currently keeps the same version (can be customized for semantic versioning)
+- **Build Date**: Updates to current date
+
+### Disabling the Hook
+
+To temporarily disable the commit hook:
+
+```bash
+# Skip the pre-commit hook for one commit
+git commit --no-verify -m "Your commit message"
+
+# Or disable husky entirely
+npm run prepare -- --disable
+```
+
 ## Adding New Networks
 
 To add a new blockchain network:

@@ -11,7 +11,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const envPath = path.join(__dirname, "..", ".env");
-const metaPath = path.join(__dirname, "..", "public", "meta.json");
 
 // Function to read and parse .env file
 function readEnvFile(filePath) {
@@ -109,14 +108,6 @@ try {
 
   // Write updated .env file
   writeEnvFile(envPath, updatedEnv);
-
-  // Write meta.json for frontend update checks
-  const meta = {
-    version: newVersion,
-    build: newBuildNumber,
-    date: newBuildDate,
-  };
-  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
 
   console.log(`✅ Build information updated:`);
   console.log(`   Version: ${newVersion}`);
