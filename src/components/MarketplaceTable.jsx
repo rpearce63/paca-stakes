@@ -51,6 +51,9 @@ export default function MarketplaceTable({ chainId, stakes }) {
                 Stake Value
               </th>
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white">
+                Daily Reward Rate
+              </th>
+              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white">
                 Bonus Amount
               </th>
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
@@ -67,7 +70,7 @@ export default function MarketplaceTable({ chainId, stakes }) {
                 </span>
               </th>
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white">
-                Daily Reward Rate
+                Daily Rewards
               </th>
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
                 Pending Rewards
@@ -101,6 +104,9 @@ export default function MarketplaceTable({ chainId, stakes }) {
                     )}
                   </td>
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white sm:table-cell hidden">
+                    {(Number(stake.dailyRewardRate) / 100).toFixed(2)}%
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white sm:table-cell hidden">
                     {formatCurrency(
                       Number(
                         ethers.formatUnits(stake.bonusAmount || 0, decimals)
@@ -125,8 +131,17 @@ export default function MarketplaceTable({ chainId, stakes }) {
                       {getEffectiveDailyRate(stake)}
                     </span>
                   </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white sm:table-cell hidden">
-                    {(Number(stake.dailyRewardRate) / 100).toFixed(2)}%
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white font-semibold sm:table-cell hidden">
+                    {(() => {
+                      const netStake =
+                        BigInt(stake.amount || 0) +
+                        BigInt(stake.bonusAmount || 0);
+                      const netStakeNum = Number(
+                        ethers.formatUnits(netStake.toString(), decimals)
+                      );
+                      const dailyRate = Number(stake.dailyRewardRate) / 100;
+                      return formatCurrency(netStakeNum * (dailyRate / 100));
+                    })()}
                   </td>
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
                     {formatCurrency(
