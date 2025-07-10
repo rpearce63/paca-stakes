@@ -11,6 +11,8 @@ function App() {
     return saved ? JSON.parse(saved) : false;
   });
   const [activeTab, setActiveTab] = useState("stakes"); // "stakes" or "marketplace"
+  const [showUpdate, setShowUpdate] = useState(false);
+  const currentVersion = import.meta.env.VITE_APP_VERSION || "1.0.0";
 
   useEffect(() => {
     localStorage.setItem("darkMode", JSON.stringify(darkMode));
@@ -20,6 +22,30 @@ function App() {
       document.documentElement.classList.remove("dark");
     }
   }, [darkMode]);
+
+  // Poll for new version
+  useEffect(() => {
+    let interval;
+    let cancelled = false;
+    async function checkVersion() {
+      try {
+        const res = await fetch("/meta.json?ts=" + Date.now());
+        if (!res.ok) return;
+        const meta = await res.json();
+        if (!cancelled && meta.version && meta.version !== currentVersion) {
+          setShowUpdate(true);
+        }
+      } catch {
+        // Ignore fetch errors (offline, etc.)
+      }
+    }
+    checkVersion();
+    interval = setInterval(checkVersion, 2 * 60 * 1000); // every 2 min
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [currentVersion]);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -31,6 +57,19 @@ function App() {
         darkMode ? "text-white" : "text-gray-900"
       }`}
     >
+      {showUpdate && (
+        <div className="fixed top-0 left-0 w-full z-50 bg-yellow-400 text-yellow-900 dark:bg-yellow-600 dark:text-yellow-100 py-3 px-4 flex items-center justify-center shadow-lg animate-fade-in">
+          <span className="font-semibold mr-4">
+            A new version is available.
+          </span>
+          <button
+            className="bg-yellow-700 hover:bg-yellow-800 text-white font-bold py-1 px-4 rounded transition"
+            onClick={() => window.location.reload()}
+          >
+            Refresh
+          </button>
+        </div>
+      )}
       <div className="flex-1">
         <div className="relative pt-20 sm:pt-16 md:pt-4">
           {/* Dark mode toggle button */}
