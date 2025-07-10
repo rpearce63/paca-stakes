@@ -161,6 +161,58 @@ export default function Marketplace() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedChain]);
 
+  // Poll for new data every minute
+  useEffect(() => {
+    let cancelled = false;
+    const interval = setInterval(() => {
+      if (!cancelled) {
+        // Trigger a refetch by calling the same logic as above
+        // (copy fetchMarketplaceStakes logic here for polling)
+        (async () => {
+          try {
+            const allStakes = {};
+            await Promise.all(
+              Object.keys(NETWORKS).map(async (chainId) => {
+                const { rpc, contract, abi } = NETWORKS[chainId];
+                const provider = new ethers.JsonRpcProvider(rpc);
+                const marketplace = new ethers.Contract(
+                  contract,
+                  abi,
+                  provider
+                );
+                const [sellers, stakeIds, sellStakeData, pendingRewards] =
+                  await marketplace.getAllSellStakesWithKeys();
+                const mapped = sellStakeData.map((stake, i) => ({
+                  seller: sellers[i],
+                  stakeId: stakeIds[i]?.toString(),
+                  price: stake.price?.toString(),
+                  bonusAmount: stake.bonusAmount?.toString(),
+                  amount: stake.amount?.toString(),
+                  lastClaimed: stake.lastClaimed?.toString(),
+                  dailyRewardRate: stake.dailyRewardRate?.toString(),
+                  origUnlockTime: stake.origUnlockTime?.toString(),
+                  pendingRewards: pendingRewards[i]?.toString(),
+                }));
+                allStakes[chainId] = mapped;
+                if (chainId === selectedChain && !cancelled) {
+                  setStakes(mapped);
+                }
+              })
+            );
+            if (!cancelled) setAllStakesByChain(allStakes);
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error("Polling error:", err);
+          }
+        })();
+      }
+    }, 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [selectedChain]);
+
   return (
     <div className="w-full min-h-screen max-w-6xl mx-auto p-2 sm:p-4 md:p-6 bg-white dark:bg-gray-800 shadow rounded flex flex-col">
       <MarketplaceSummary
