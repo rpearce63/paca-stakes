@@ -17,8 +17,19 @@ const Footer = () => {
     <footer className="bg-gray-800 dark:bg-gray-900 text-white py-6 mt-8">
       <div className="max-w-5xl mx-auto px-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 md:gap-0 w-full">
+          {/* Credits Section */}
+          <div className="w-full md:w-1/3 text-sm text-gray-300 dark:text-gray-400 text-center md:text-left order-1 md:order-1">
+            <p>
+              © {new Date().getFullYear()} Paca Stakes Viewer. All rights
+              reserved.
+            </p>
+            <p className="mt-1">
+              brought to you by rpearce63 & Pelican Point Consulting
+            </p>
+          </div>
+
           {/* Icon Links Section */}
-          <div className="flex flex-row flex-wrap justify-center md:justify-start gap-3 w-full md:w-1/3 order-1 md:order-1">
+          <div className="flex flex-row flex-wrap justify-center gap-3 w-full md:w-1/3 order-2 md:order-2">
             {/* dApp link with app icon */}
             <a
               href="https://paca.finance"
@@ -86,17 +97,6 @@ const Footer = () => {
                 )}
               </a>
             ))}
-          </div>
-
-          {/* Credits Section */}
-          <div className="w-full md:w-1/3 text-sm text-gray-300 dark:text-gray-400 text-center md:text-left order-2 md:order-2">
-            <p>
-              © {new Date().getFullYear()} Paca Stakes Viewer. All rights
-              reserved.
-            </p>
-            <p className="mt-1">
-              brought to you by rpearce63 & Pelican Point Consulting
-            </p>
           </div>
 
           {/* Build Info Section */}
