@@ -4,15 +4,56 @@ import { ethers } from "ethers";
 import { formatCurrency } from "../utils/formatters";
 
 // Mobile popup component for stake details
-function MobileStakePopup({ stake, chainId, onClose }) {
+function MobileStakePopup({ stake, chainId, onClose, originRect }) {
   const [isVisible, setIsVisible] = React.useState(false);
+  const cardRef = React.useRef(null);
   const decimals = NETWORKS[chainId].decimals;
 
   React.useEffect(() => {
-    // Trigger animation after component mounts
     const timer = setTimeout(() => setIsVisible(true), 10);
     return () => clearTimeout(timer);
   }, []);
+
+  // Get viewport size
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  // Centered card size
+  const targetWidth = Math.min(360, vw - 32);
+  const targetHeight = Math.min(600, vh - 32);
+  const targetTop = (vh - targetHeight) / 2;
+  const targetLeft = (vw - targetWidth) / 2;
+
+  // Animation: from originRect to center, scale and rotateY
+  let style = {
+    position: "fixed",
+    zIndex: 100,
+    border: "2px solid #3b82f6", // blue border for debug
+    borderRadius: "0.75rem",
+    boxShadow: "0 10px 40px 0 rgba(0,0,0,0.25)",
+    overflowY: "auto",
+    maxHeight: "90vh",
+    left: targetLeft,
+    top: targetTop,
+    width: targetWidth,
+    height: targetHeight,
+    transformOrigin: "center center",
+    willChange: "transform,opacity",
+    transition:
+      "transform 0.5s cubic-bezier(0.4,0.2,0.2,1), opacity 0.3s cubic-bezier(0.4,0.2,0.2,1)",
+    opacity: isVisible ? 1 : 0,
+    transform: isVisible
+      ? "scale(1) rotateY(360deg)"
+      : "scale(0.2) rotateY(0deg)",
+  };
+  if (originRect) {
+    // Animate from row position
+    if (!isVisible) {
+      style.left = originRect.left;
+      style.top = originRect.top;
+      style.width = originRect.width;
+      style.height = originRect.height;
+    }
+  }
 
   // Calculate effective daily rate: (dailyRewardRate * netStakeAmount) / price
   const getEffectiveDailyRate = (stake) => {
@@ -36,18 +77,16 @@ function MobileStakePopup({ stake, chainId, onClose }) {
 
   return (
     <div
-      className={`fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 transition-opacity duration-200 ease-out ${
-        isVisible ? "opacity-100" : "opacity-0"
-      }`}
+      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 transition-opacity duration-200 ease-out"
       onClick={() => {
         setIsVisible(false);
-        setTimeout(onClose, 200);
+        setTimeout(onClose, 500);
       }}
     >
       <div
-        className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto transform transition-all duration-200 ease-out ${
-          isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
-        }`}
+        ref={cardRef}
+        style={style}
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
@@ -58,7 +97,7 @@ function MobileStakePopup({ stake, chainId, onClose }) {
             <button
               onClick={() => {
                 setIsVisible(false);
-                setTimeout(onClose, 200); // Wait for animation to complete
+                setTimeout(onClose, 500); // Wait for animation to complete
               }}
               className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
@@ -225,6 +264,7 @@ function MobileStakePopup({ stake, chainId, onClose }) {
 
 export default function MarketplaceTable({ chainId, stakes }) {
   const [selectedStake, setSelectedStake] = useState(null);
+  const [popupOrigin, setPopupOrigin] = useState(null); // {top, left, width, height}
   const decimals = NETWORKS[chainId].decimals;
 
   // Calculate effective daily rate: (dailyRewardRate * netStakeAmount) / price
@@ -247,9 +287,15 @@ export default function MarketplaceTable({ chainId, stakes }) {
     return addr.slice(0, 6) + "..." + addr.slice(-4);
   };
 
-  const handleRowClick = (stake) => {
-    // Only show popup on mobile (screen width < 768px)
+  const handleRowClick = (stake, e) => {
     if (window.innerWidth < 768) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setPopupOrigin({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+      });
       setSelectedStake(stake);
     }
   };
@@ -311,7 +357,7 @@ export default function MarketplaceTable({ chainId, stakes }) {
                 <tr
                   key={idx}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer md:cursor-default"
-                  onClick={() => handleRowClick(stake)}
+                  onClick={(e) => handleRowClick(stake, e)}
                 >
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white sm:table-cell hidden">
                     {NETWORKS[chainId].name}
@@ -401,6 +447,7 @@ export default function MarketplaceTable({ chainId, stakes }) {
           stake={selectedStake}
           chainId={chainId}
           onClose={() => setSelectedStake(null)}
+          originRect={popupOrigin}
         />
       )}
     </div>
