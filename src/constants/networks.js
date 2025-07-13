@@ -10,6 +10,7 @@ export const NETWORKS = {
     token: "USDT",
     decimals: 18,
     abi: BSC_ABI,
+    explorer: "https://bscscan.com",
   },
   base: {
     name: "BASE",
@@ -18,6 +19,7 @@ export const NETWORKS = {
     token: "USDC",
     decimals: 6,
     abi: BASE_ABI,
+    explorer: "https://basescan.org",
   },
   sonic: {
     name: "SONIC",
@@ -26,5 +28,6 @@ export const NETWORKS = {
     token: "USDC",
     decimals: 6,
     abi: SONIC_ABI,
+    explorer: "https://sonicscan.org",
   },
 };
