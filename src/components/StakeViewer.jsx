@@ -421,6 +421,7 @@ export default function StakeViewer() {
             allLogs
           );
           let found = null;
+          let foundBlockNumber = null;
           for (const log of allLogs) {
             // BscScan returns logs as raw objects, need to parse topics/data
             let parsed;
@@ -442,18 +443,45 @@ export default function StakeViewer() {
             );
             if (parsedStakeId === wantedStakeId) {
               found = parsed.args.amount?.toString?.() ?? null;
+              foundBlockNumber = log.blockNumber;
               console.debug(
                 `Found withdrawn amount for stakeId ${wantedStakeId}:`,
-                found
+                found,
+                "blockNumber:",
+                foundBlockNumber
               );
               break;
             }
           }
           if (found) {
-            logsByStakeId[w.stakeId] = found;
+            logsByStakeId[w.stakeId] = {
+              amount: found,
+              blockNumber: foundBlockNumber,
+            };
           }
         }
-        console.debug("logsByStakeId mapping:", logsByStakeId);
+        // Fetch timestamps for each blockNumber
+        const blockNumbers = Object.values(logsByStakeId)
+          .map((obj) => obj.blockNumber)
+          .filter(Boolean);
+        const uniqueBlockNumbers = [...new Set(blockNumbers)];
+        const blockTimestamps = {};
+        for (const bn of uniqueBlockNumbers) {
+          try {
+            const block = await provider.getBlock(Number(bn));
+            blockTimestamps[bn] = block.timestamp;
+          } catch (err) {
+            console.error("Error fetching block for timestamp:", bn, err);
+          }
+        }
+        // Add timestamp to each entry
+        for (const stakeId in logsByStakeId) {
+          const obj = logsByStakeId[stakeId];
+          if (obj && obj.blockNumber && blockTimestamps[obj.blockNumber]) {
+            obj.timestamp = blockTimestamps[obj.blockNumber];
+          }
+        }
+        console.debug("logsByStakeId mapping with timestamps:", logsByStakeId);
         setWithdrawnAmountsByStakeId(logsByStakeId);
       } catch (err) {
         setWithdrawnAmountsByStakeId({});

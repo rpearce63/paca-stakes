@@ -11,6 +11,7 @@ export default function WithdrawalsTable({
 }) {
   const decimals = NETWORKS[network].decimals;
   const showWithdrawnAmountCol = showCompleted;
+  const showWithdrawnDateCol = showCompleted;
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-4">
@@ -46,6 +47,11 @@ export default function WithdrawalsTable({
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold dark:text-white">
                 Unlock Time
               </th>
+              {showWithdrawnDateCol && (
+                <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold dark:text-white">
+                  Withdrawn Date
+                </th>
+              )}
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold dark:text-white">
                 Time Left
               </th>
@@ -54,11 +60,21 @@ export default function WithdrawalsTable({
           <tbody>
             {withdrawals.map((w, idx) => {
               const isCompleted = Number(w.amount) === 0;
-              const withdrawnAmount =
+              const withdrawnObj =
                 isCompleted &&
                 withdrawnAmountsByStakeId &&
                 withdrawnAmountsByStakeId[w.stakeId]
-                  ? formatAmount(withdrawnAmountsByStakeId[w.stakeId], decimals)
+                  ? withdrawnAmountsByStakeId[w.stakeId]
+                  : null;
+              const withdrawnAmount =
+                withdrawnObj && withdrawnObj.amount
+                  ? formatAmount(withdrawnObj.amount, decimals)
+                  : isCompleted
+                  ? "-"
+                  : "";
+              const withdrawnDate =
+                withdrawnObj && withdrawnObj.timestamp
+                  ? formatDate(withdrawnObj.timestamp)
                   : isCompleted
                   ? "-"
                   : "";
@@ -81,6 +97,11 @@ export default function WithdrawalsTable({
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
                     {formatDate(w.unlockTime)}
                   </td>
+                  {showWithdrawnDateCol && (
+                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                      {withdrawnDate}
+                    </td>
+                  )}
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
                     {formatTimeLeft(w.unlockTime)}
                   </td>
