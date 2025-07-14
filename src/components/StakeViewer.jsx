@@ -6,6 +6,47 @@ import NetworkSelector from "./NetworkSelector";
 import ChainSummaryTable from "./ChainSummaryTable";
 import StakesTable from "./StakesTable";
 import MultiWalletSummary from "./MultiWalletSummary";
+import WithdrawalsTable from "./WithdrawalsTable";
+import { Interface } from "ethers";
+import { zeroPadValue, getAddress } from "ethers";
+
+// BscScan API key from environment
+const BSCSCAN_API_KEY = import.meta.env.VITE_BSCSCAN_API_KEY;
+if (!BSCSCAN_API_KEY) {
+  console.warn(
+    "BscScan API key is missing. Please set VITE_BSCSCAN_API_KEY in your .env file."
+  );
+}
+
+// Utility to fetch logs from BscScan API
+async function fetchLogsFromBscScan({
+  address,
+  topics,
+  fromBlock = 0,
+  toBlock = "latest",
+}) {
+  const baseUrl = "https://api.bscscan.com/api";
+  const params = new URLSearchParams({
+    module: "logs",
+    action: "getLogs",
+    address,
+    fromBlock: fromBlock.toString(),
+    toBlock: toBlock.toString(),
+    apikey: BSCSCAN_API_KEY,
+  });
+  topics.forEach((topic, i) => {
+    if (topic) params.append(`topic${i}`, topic);
+  });
+  const url = `${baseUrl}?${params.toString()}`;
+  console.debug("BscScan logs URL:", url);
+  const resp = await fetch(url);
+  const data = await resp.json();
+  if (data.status !== "1" || !data.result) {
+    throw new Error(`BscScan API error: ${data.message}`);
+  }
+  console.debug("BscScan logs API result:", data.result);
+  return data.result;
+}
 
 export default function StakeViewer() {
   const [address, setAddress] = useState("");
@@ -28,6 +69,12 @@ export default function StakeViewer() {
   const [showDropdown, setShowDropdown] = useState(false);
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
+  const [withdrawals, setWithdrawals] = useState([]);
+  const [showCompletedWithdrawals, setShowCompletedWithdrawals] =
+    useState(false);
+  const [withdrawnAmountsByStakeId, setWithdrawnAmountsByStakeId] = useState(
+    {}
+  );
 
   // Update ref when network changes
   useEffect(() => {
@@ -296,6 +343,126 @@ export default function StakeViewer() {
     }
   }, [network, stakesCache, isInitialLoad]);
 
+  // Fetch withdrawals for the current address and network
+  const fetchWithdrawals = useCallback(async () => {
+    if (!address || !ethers.isAddress(address)) {
+      setWithdrawals([]);
+      return;
+    }
+    try {
+      const provider = new ethers.JsonRpcProvider(NETWORKS[network].rpc);
+      const contract = new ethers.Contract(
+        NETWORKS[network].contract,
+        NETWORKS[network].abi,
+        provider
+      );
+      const result = await contract.getAllWithdrawStakes(address);
+      // result is array of { stakeId, amount, unlockTime }
+      setWithdrawals(
+        result.map((w) => ({
+          stakeId: w.stakeId?.toString?.() ?? w.stakeId,
+          amount: w.amount?.toString?.() ?? w.amount,
+          unlockTime: w.unlockTime?.toString?.() ?? w.unlockTime,
+        }))
+      );
+    } catch {
+      setWithdrawals([]);
+      // Optionally log error
+    }
+  }, [address, network]);
+
+  // Fetch withdrawals when address or network changes
+  useEffect(() => {
+    fetchWithdrawals();
+  }, [fetchWithdrawals]);
+
+  // Fetch withdrawn amounts from logs for completed withdrawals
+  useEffect(() => {
+    async function fetchWithdrawnLogs() {
+      if (
+        !address ||
+        !ethers.isAddress(address) ||
+        !withdrawals ||
+        withdrawals.length === 0
+      ) {
+        setWithdrawnAmountsByStakeId({});
+        return;
+      }
+      const completed = withdrawals.filter((w) => Number(w.amount) === 0);
+      if (completed.length === 0) {
+        setWithdrawnAmountsByStakeId({});
+        return;
+      }
+      try {
+        const provider = new ethers.JsonRpcProvider(NETWORKS[network].rpc);
+        const iface = new Interface(NETWORKS[network].abi);
+        const eventTopic = iface.getEvent("StakeWithdrawn").topicHash;
+        const logsByStakeId = {};
+        // Get latest block
+        const latestBlock = await provider.getBlockNumber();
+        const fromBlock = 0; // Use full history for BscScan
+        for (const w of completed) {
+          const userTopic = zeroPadValue(getAddress(address), 32);
+          const topics = [eventTopic, userTopic];
+          let allLogs = [];
+          try {
+            allLogs = await fetchLogsFromBscScan({
+              address: NETWORKS[network].contract,
+              topics,
+              fromBlock,
+              toBlock: latestBlock,
+            });
+          } catch (apiErr) {
+            console.error("BscScan API error:", apiErr);
+            continue;
+          }
+          console.debug(
+            `Merged logs for user ${address} and stakeId ${w.stakeId}:`,
+            allLogs
+          );
+          let found = null;
+          for (const log of allLogs) {
+            // BscScan returns logs as raw objects, need to parse topics/data
+            let parsed;
+            try {
+              parsed = iface.parseLog({
+                topics: log.topics,
+                data: log.data,
+              });
+            } catch (parseErr) {
+              console.error("Error parsing log from BscScan:", parseErr, log);
+              continue;
+            }
+            console.debug("Parsed log:", parsed);
+            const parsedStakeId =
+              parsed.args.stakeId?.toString?.() ?? String(parsed.args.stakeId);
+            const wantedStakeId = w.stakeId?.toString?.() ?? String(w.stakeId);
+            console.debug(
+              `Comparing parsedStakeId=${parsedStakeId} to wantedStakeId=${wantedStakeId}`
+            );
+            if (parsedStakeId === wantedStakeId) {
+              found = parsed.args.amount?.toString?.() ?? null;
+              console.debug(
+                `Found withdrawn amount for stakeId ${wantedStakeId}:`,
+                found
+              );
+              break;
+            }
+          }
+          if (found) {
+            logsByStakeId[w.stakeId] = found;
+          }
+        }
+        console.debug("logsByStakeId mapping:", logsByStakeId);
+        setWithdrawnAmountsByStakeId(logsByStakeId);
+      } catch (err) {
+        setWithdrawnAmountsByStakeId({});
+        console.error("Error fetching or parsing StakeWithdrawn logs:", err);
+      }
+    }
+    fetchWithdrawnLogs();
+  }, [address, network, withdrawals]);
+
   const updateChain = async (chain) => {
     setNetwork(chain);
 
@@ -548,6 +715,40 @@ export default function StakeViewer() {
       {Object.keys(chainTotals).length > 0 && (
         <ChainSummaryTable chainTotals={chainTotals} />
       )}
+      {/* Withdrawals section logic - moved after summary table */}
+      {(() => {
+        if (!withdrawals || withdrawals.length === 0) return null;
+        const pending = withdrawals.filter((w) => Number(w.amount) > 0);
+        const completed = withdrawals.filter((w) => Number(w.amount) === 0);
+        if (pending.length > 0 || showCompletedWithdrawals) {
+          return (
+            <WithdrawalsTable
+              withdrawals={showCompletedWithdrawals ? withdrawals : pending}
+              network={network}
+              showCompleted={showCompletedWithdrawals}
+              onShowCompletedChange={setShowCompletedWithdrawals}
+              withdrawnAmountsByStakeId={withdrawnAmountsByStakeId}
+            />
+          );
+        } else if (completed.length > 0) {
+          return (
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-gray-700 dark:text-gray-200">
+                  No pending withdrawals.
+                </span>
+                <button
+                  className="text-blue-600 dark:text-blue-400 underline text-sm"
+                  onClick={() => setShowCompletedWithdrawals(true)}
+                >
+                  Show completed withdrawals
+                </button>
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
       {stakes?.length > 0 && (
         <StakesTable
           stakes={filteredAndSortedStakes}
