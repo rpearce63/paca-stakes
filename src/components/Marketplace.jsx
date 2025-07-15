@@ -36,64 +36,71 @@ function MarketplaceSummary({
             </tr>
           </thead>
           <tbody>
-            {Object.keys(NETWORKS).map((chainId) => {
-              const stakes = allStakesByChain[chainId] || [];
-              const decimals = NETWORKS[chainId].decimals;
-              const totalNet = stakes.reduce((sum, s) => {
-                const net = BigInt(s.amount || 0) + BigInt(s.bonusAmount || 0);
-                return (
-                  sum + Number(ethers.formatUnits(net.toString(), decimals))
+            {Object.keys(NETWORKS)
+              .filter((chainId) => chainId !== "sonic") // Hide Sonic for now
+              .map((chainId) => {
+                const stakes = allStakesByChain[chainId] || [];
+                const decimals = NETWORKS[chainId].decimals;
+                const totalNet = stakes.reduce((sum, s) => {
+                  const net =
+                    BigInt(s.amount || 0) + BigInt(s.bonusAmount || 0);
+                  return (
+                    sum + Number(ethers.formatUnits(net.toString(), decimals))
+                  );
+                }, 0);
+                const prices = stakes.map((s) =>
+                  Number(ethers.formatUnits(s.price || 0, decimals))
                 );
-              }, 0);
-              const prices = stakes.map((s) =>
-                Number(ethers.formatUnits(s.price || 0, decimals))
-              );
-              const avgPrice = prices.length
-                ? prices.reduce((a, b) => a + b, 0) / prices.length
-                : 0;
-              const minPrice = prices.length ? Math.min(...prices) : 0;
-              const maxPrice = prices.length ? Math.max(...prices) : 0;
-              const dailyRates = stakes.map(
-                (s) => Number(s.dailyRewardRate) / 100
-              );
-              const minDaily = dailyRates.length ? Math.min(...dailyRates) : 0;
-              const maxDaily = dailyRates.length ? Math.max(...dailyRates) : 0;
-              const isSelected = selectedChain === chainId;
-              return (
-                <tr
-                  key={chainId}
-                  className="hover:bg-blue-100/60 dark:hover:bg-gray-800 transition"
-                >
-                  <td className="px-2 sm:px-4 py-1 sm:py-2 font-semibold text-blue-700 dark:text-blue-300 text-xs sm:text-sm">
-                    <button
-                      className={`inline-block rounded px-1 sm:px-2 py-0.5 sm:py-1 transition font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600 text-xs sm:text-sm ${
-                        isSelected
-                          ? "bg-blue-600 text-white dark:bg-blue-400 dark:text-gray-900 shadow"
-                          : "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800"
-                      }`}
-                      onClick={() => setSelectedChain(chainId)}
-                    >
-                      {NETWORKS[chainId].name}
-                    </button>
-                  </td>
-                  <td className="px-2 sm:px-4 py-1 sm:py-2 text-right text-gray-700 dark:text-gray-200 text-xs sm:text-sm">
-                    {stakes.length}
-                  </td>
-                  <td className="px-2 sm:px-4 py-1 sm:py-2 text-right font-bold text-green-700 dark:text-green-300 text-xs sm:text-base">
-                    {formatCurrency(totalNet)}
-                  </td>
-                  <td className="px-2 sm:px-4 py-1 sm:py-2 text-right text-gray-700 dark:text-gray-200 text-xs sm:text-sm">
-                    {formatCurrency(avgPrice)}
-                  </td>
-                  <td className="px-2 sm:px-4 py-1 sm:py-2 text-right text-gray-700 dark:text-gray-200 text-xs sm:text-sm">
-                    {formatCurrency(minPrice)} - {formatCurrency(maxPrice)}
-                  </td>
-                  <td className="px-2 sm:px-4 py-1 sm:py-2 text-right text-gray-700 dark:text-gray-200 text-xs sm:text-sm">
-                    {minDaily.toFixed(2)}% - {maxDaily.toFixed(2)}%
-                  </td>
-                </tr>
-              );
-            })}
+                const avgPrice = prices.length
+                  ? prices.reduce((a, b) => a + b, 0) / prices.length
+                  : 0;
+                const minPrice = prices.length ? Math.min(...prices) : 0;
+                const maxPrice = prices.length ? Math.max(...prices) : 0;
+                const dailyRates = stakes.map(
+                  (s) => Number(s.dailyRewardRate) / 100
+                );
+                const minDaily = dailyRates.length
+                  ? Math.min(...dailyRates)
+                  : 0;
+                const maxDaily = dailyRates.length
+                  ? Math.max(...dailyRates)
+                  : 0;
+                const isSelected = selectedChain === chainId;
+                return (
+                  <tr
+                    key={chainId}
+                    className="hover:bg-blue-100/60 dark:hover:bg-gray-800 transition"
+                  >
+                    <td className="px-2 sm:px-4 py-1 sm:py-2 font-semibold text-blue-700 dark:text-blue-300 text-xs sm:text-sm">
+                      <button
+                        className={`inline-block rounded px-1 sm:px-2 py-0.5 sm:py-1 transition font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600 text-xs sm:text-sm ${
+                          isSelected
+                            ? "bg-blue-600 text-white dark:bg-blue-400 dark:text-gray-900 shadow"
+                            : "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800"
+                        }`}
+                        onClick={() => setSelectedChain(chainId)}
+                      >
+                        {NETWORKS[chainId].name}
+                      </button>
+                    </td>
+                    <td className="px-2 sm:px-4 py-1 sm:py-2 text-right text-gray-700 dark:text-gray-200 text-xs sm:text-sm">
+                      {stakes.length}
+                    </td>
+                    <td className="px-2 sm:px-4 py-1 sm:py-2 text-right font-bold text-green-700 dark:text-green-300 text-xs sm:text-base">
+                      {formatCurrency(totalNet)}
+                    </td>
+                    <td className="px-2 sm:px-4 py-1 sm:py-2 text-right text-gray-700 dark:text-gray-200 text-xs sm:text-sm">
+                      {formatCurrency(avgPrice)}
+                    </td>
+                    <td className="px-2 sm:px-4 py-1 sm:py-2 text-right text-gray-700 dark:text-gray-200 text-xs sm:text-sm">
+                      {formatCurrency(minPrice)} - {formatCurrency(maxPrice)}
+                    </td>
+                    <td className="px-2 sm:px-4 py-1 sm:py-2 text-right text-gray-700 dark:text-gray-200 text-xs sm:text-sm">
+                      {minDaily.toFixed(2)}% - {maxDaily.toFixed(2)}%
+                    </td>
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>
@@ -102,6 +109,7 @@ function MarketplaceSummary({
 }
 
 export default function Marketplace() {
+  // Hide Sonic for now
   const [selectedChain, setSelectedChain] = useState("bsc");
   const [stakes, setStakes] = useState([]);
   const [allStakesByChain, setAllStakesByChain] = useState({});
@@ -116,31 +124,33 @@ export default function Marketplace() {
       setStakes([]);
       try {
         const allStakes = {};
-        // Fetch for all chains in parallel
+        // Fetch for all chains in parallel, but skip Sonic
         await Promise.all(
-          Object.keys(NETWORKS).map(async (chainId) => {
-            const { rpc, contract, abi } = NETWORKS[chainId];
-            const provider = new ethers.JsonRpcProvider(rpc);
-            const marketplace = new ethers.Contract(contract, abi, provider);
-            const [sellers, stakeIds, sellStakeData, pendingRewards] =
-              await marketplace.getAllSellStakesWithKeys();
-            const mapped = sellStakeData.map((stake, i) => ({
-              seller: sellers[i],
-              stakeId: stakeIds[i]?.toString(),
-              price: stake.price?.toString(),
-              bonusAmount: stake.bonusAmount?.toString(),
-              amount: stake.amount?.toString(),
-              lastClaimed: stake.lastClaimed?.toString(),
-              dailyRewardRate: stake.dailyRewardRate?.toString(),
-              origUnlockTime: stake.origUnlockTime?.toString(),
-              pendingRewards: pendingRewards[i]?.toString(),
-            }));
-            allStakes[chainId] = mapped;
-            // If this is the selected chain, update the visible table
-            if (chainId === selectedChain && !cancelled) {
-              setStakes(mapped);
-            }
-          })
+          Object.keys(NETWORKS)
+            .filter((chainId) => chainId !== "sonic")
+            .map(async (chainId) => {
+              const { rpc, contract, abi } = NETWORKS[chainId];
+              const provider = new ethers.JsonRpcProvider(rpc);
+              const marketplace = new ethers.Contract(contract, abi, provider);
+              const [sellers, stakeIds, sellStakeData, pendingRewards] =
+                await marketplace.getAllSellStakesWithKeys();
+              const mapped = sellStakeData.map((stake, i) => ({
+                seller: sellers[i],
+                stakeId: stakeIds[i]?.toString(),
+                price: stake.price?.toString(),
+                bonusAmount: stake.bonusAmount?.toString(),
+                amount: stake.amount?.toString(),
+                lastClaimed: stake.lastClaimed?.toString(),
+                dailyRewardRate: stake.dailyRewardRate?.toString(),
+                origUnlockTime: stake.origUnlockTime?.toString(),
+                pendingRewards: pendingRewards[i]?.toString(),
+              }));
+              allStakes[chainId] = mapped;
+              // If this is the selected chain, update the visible table
+              if (chainId === selectedChain && !cancelled) {
+                setStakes(mapped);
+              }
+            })
         );
         if (!cancelled) setAllStakesByChain(allStakes);
       } catch (err) {
@@ -172,32 +182,34 @@ export default function Marketplace() {
           try {
             const allStakes = {};
             await Promise.all(
-              Object.keys(NETWORKS).map(async (chainId) => {
-                const { rpc, contract, abi } = NETWORKS[chainId];
-                const provider = new ethers.JsonRpcProvider(rpc);
-                const marketplace = new ethers.Contract(
-                  contract,
-                  abi,
-                  provider
-                );
-                const [sellers, stakeIds, sellStakeData, pendingRewards] =
-                  await marketplace.getAllSellStakesWithKeys();
-                const mapped = sellStakeData.map((stake, i) => ({
-                  seller: sellers[i],
-                  stakeId: stakeIds[i]?.toString(),
-                  price: stake.price?.toString(),
-                  bonusAmount: stake.bonusAmount?.toString(),
-                  amount: stake.amount?.toString(),
-                  lastClaimed: stake.lastClaimed?.toString(),
-                  dailyRewardRate: stake.dailyRewardRate?.toString(),
-                  origUnlockTime: stake.origUnlockTime?.toString(),
-                  pendingRewards: pendingRewards[i]?.toString(),
-                }));
-                allStakes[chainId] = mapped;
-                if (chainId === selectedChain && !cancelled) {
-                  setStakes(mapped);
-                }
-              })
+              Object.keys(NETWORKS)
+                .filter((chainId) => chainId !== "sonic")
+                .map(async (chainId) => {
+                  const { rpc, contract, abi } = NETWORKS[chainId];
+                  const provider = new ethers.JsonRpcProvider(rpc);
+                  const marketplace = new ethers.Contract(
+                    contract,
+                    abi,
+                    provider
+                  );
+                  const [sellers, stakeIds, sellStakeData, pendingRewards] =
+                    await marketplace.getAllSellStakesWithKeys();
+                  const mapped = sellStakeData.map((stake, i) => ({
+                    seller: sellers[i],
+                    stakeId: stakeIds[i]?.toString(),
+                    price: stake.price?.toString(),
+                    bonusAmount: stake.bonusAmount?.toString(),
+                    amount: stake.amount?.toString(),
+                    lastClaimed: stake.lastClaimed?.toString(),
+                    dailyRewardRate: stake.dailyRewardRate?.toString(),
+                    origUnlockTime: stake.origUnlockTime?.toString(),
+                    pendingRewards: pendingRewards[i]?.toString(),
+                  }));
+                  allStakes[chainId] = mapped;
+                  if (chainId === selectedChain && !cancelled) {
+                    setStakes(mapped);
+                  }
+                })
             );
             if (!cancelled) setAllStakesByChain(allStakes);
           } catch (err) {
