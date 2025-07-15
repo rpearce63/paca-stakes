@@ -112,6 +112,9 @@ export default function Marketplace() {
   // Hide Sonic for now
   const [selectedChain, setSelectedChain] = useState("bsc");
   const [stakes, setStakes] = useState([]);
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
+  const totalPages = Math.max(1, Math.ceil(stakes.length / rowsPerPage));
   const [allStakesByChain, setAllStakesByChain] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -149,6 +152,7 @@ export default function Marketplace() {
               // If this is the selected chain, update the visible table
               if (chainId === selectedChain && !cancelled) {
                 setStakes(mapped);
+                setPage(1); // Reset to first page on chain change
               }
             })
         );
@@ -176,8 +180,6 @@ export default function Marketplace() {
     let cancelled = false;
     const interval = setInterval(() => {
       if (!cancelled) {
-        // Trigger a refetch by calling the same logic as above
-        // (copy fetchMarketplaceStakes logic here for polling)
         (async () => {
           try {
             const allStakes = {};
@@ -208,6 +210,7 @@ export default function Marketplace() {
                   allStakes[chainId] = mapped;
                   if (chainId === selectedChain && !cancelled) {
                     setStakes(mapped);
+                    setPage(1); // Reset to first page on update
                   }
                 })
             );
@@ -224,6 +227,11 @@ export default function Marketplace() {
       clearInterval(interval);
     };
   }, [selectedChain]);
+
+  // Reset to page 1 if stakes or selectedChain changes
+  useEffect(() => {
+    setPage(1);
+  }, [stakes, selectedChain, rowsPerPage]);
 
   return (
     <div className="w-full min-h-screen max-w-6xl mx-auto p-2 sm:p-4 md:p-6 bg-white dark:bg-gray-800 shadow rounded flex flex-col">
@@ -244,6 +252,66 @@ export default function Marketplace() {
       ) : (
         <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
           <MarketplaceTable chainId={selectedChain} stakes={stakes} />
+        </div>
+      )}
+      {/* Pagination controls */}
+      {stakes.length > 10 && (
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-2 mt-4">
+          <div className="flex items-center gap-2">
+            <button
+              className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
+              onClick={() => setPage(1)}
+              disabled={page === 1}
+              aria-label="First page"
+            >
+              {"<<"}
+            </button>
+            <button
+              className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              aria-label="Previous page"
+            >
+              {"<"}
+            </button>
+            <span className="text-sm dark:text-white">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              aria-label="Next page"
+            >
+              {">"}
+            </button>
+            <button
+              className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
+              onClick={() => setPage(totalPages)}
+              disabled={page === totalPages}
+              aria-label="Last page"
+            >
+              {">>"}
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="marketplace-rows-per-page"
+              className="text-sm dark:text-white"
+            >
+              Rows per page:
+            </label>
+            <select
+              id="marketplace-rows-per-page"
+              className="border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
+              value={rowsPerPage}
+              onChange={(e) => setRowsPerPage(Number(e.target.value))}
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
         </div>
       )}
     </div>

@@ -75,6 +75,21 @@ export default function StakeViewer() {
   const [withdrawnAmountsByStakeId, setWithdrawnAmountsByStakeId] = useState(
     {}
   );
+  const filteredAndSortedStakes = sortData(
+    stakes.filter((stake) => !hideCompleted || !stake.complete),
+    sortConfig,
+    NETWORKS[network].decimals
+  );
+  const [stakesPage, setStakesPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const totalStakesPages = Math.max(
+    1,
+    Math.ceil(filteredAndSortedStakes.length / rowsPerPage)
+  );
+  const pagedStakes = filteredAndSortedStakes.slice(
+    (stakesPage - 1) * rowsPerPage,
+    stakesPage * rowsPerPage
+  );
 
   // Update ref when network changes
   useEffect(() => {
@@ -343,6 +358,11 @@ export default function StakeViewer() {
     }
   }, [network, stakesCache, isInitialLoad]);
 
+  // Reset to page 1 if stakes or network changes
+  useEffect(() => {
+    setStakesPage(1);
+  }, [stakes, network, address, rowsPerPage]);
+
   // Fetch withdrawals for the current address and network
   const fetchWithdrawals = useCallback(async () => {
     if (!address || !ethers.isAddress(address)) {
@@ -530,12 +550,6 @@ export default function StakeViewer() {
     }
     setSortConfig({ key, direction });
   };
-
-  const filteredAndSortedStakes = sortData(
-    stakes.filter((stake) => !hideCompleted || !stake.complete),
-    sortConfig,
-    NETWORKS[network].decimals
-  );
 
   // Handler to delete a single address from the list
   const handleDeleteAddress = (addr) => {
@@ -777,15 +791,79 @@ export default function StakeViewer() {
         }
         return null;
       })()}
-      {stakes?.length > 0 && (
-        <StakesTable
-          stakes={filteredAndSortedStakes}
-          network={network}
-          hideCompleted={hideCompleted}
-          setHideCompleted={setHideCompleted}
-          requestSort={requestSort}
-          getSortIcon={(key) => getSortIcon(sortConfig, key)}
-        />
+      {filteredAndSortedStakes?.length > 0 && (
+        <>
+          <StakesTable
+            stakes={pagedStakes}
+            network={network}
+            hideCompleted={hideCompleted}
+            setHideCompleted={setHideCompleted}
+            requestSort={requestSort}
+            getSortIcon={(key) => getSortIcon(sortConfig, key)}
+          />
+          {/* Pagination controls */}
+          {filteredAndSortedStakes.length > 10 && (
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-2 mt-4">
+              <div className="flex items-center gap-2">
+                <button
+                  className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
+                  onClick={() => setStakesPage(1)}
+                  disabled={stakesPage === 1}
+                  aria-label="First page"
+                >
+                  {"<<"}
+                </button>
+                <button
+                  className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
+                  onClick={() => setStakesPage((p) => Math.max(1, p - 1))}
+                  disabled={stakesPage === 1}
+                  aria-label="Previous page"
+                >
+                  {"<"}
+                </button>
+                <span className="text-sm dark:text-white">
+                  Page {stakesPage} of {totalStakesPages}
+                </span>
+                <button
+                  className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
+                  onClick={() =>
+                    setStakesPage((p) => Math.min(totalStakesPages, p + 1))
+                  }
+                  disabled={stakesPage === totalStakesPages}
+                  aria-label="Next page"
+                >
+                  {">"}
+                </button>
+                <button
+                  className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
+                  onClick={() => setStakesPage(totalStakesPages)}
+                  disabled={stakesPage === totalStakesPages}
+                  aria-label="Last page"
+                >
+                  {">>"}
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="stakes-rows-per-page"
+                  className="text-sm dark:text-white"
+                >
+                  Rows per page:
+                </label>
+                <select
+                  id="stakes-rows-per-page"
+                  className="border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
+                  value={rowsPerPage}
+                  onChange={(e) => setRowsPerPage(Number(e.target.value))}
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
