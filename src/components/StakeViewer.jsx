@@ -91,6 +91,37 @@ export default function StakeViewer() {
     stakesPage * rowsPerPage
   );
 
+  // State for current pool rates
+  const [poolRates, setPoolRates] = useState({});
+
+  // Fetch pool rates for all chains
+  const fetchRates = useCallback(async () => {
+    const rates = {};
+    await Promise.all(
+      Object.keys(NETWORKS).map(async (chainId) => {
+        try {
+          const provider = new ethers.JsonRpcProvider(NETWORKS[chainId].rpc);
+          const contract = new ethers.Contract(
+            NETWORKS[chainId].contract,
+            NETWORKS[chainId].abi,
+            provider
+          );
+          const pool = await contract.pool();
+          // pool.dailyRewardRate is in basis points (e.g., 1234 = 12.34%)
+          rates[chainId] = Number(pool.dailyRewardRate) / 100;
+        } catch {
+          rates[chainId] = null;
+        }
+      })
+    );
+    setPoolRates(rates);
+  }, []);
+
+  // Fetch pool rates on mount
+  useEffect(() => {
+    fetchRates();
+  }, [fetchRates]);
+
   // Update ref when network changes
   useEffect(() => {
     networkRef.current = network;
@@ -241,6 +272,8 @@ export default function StakeViewer() {
     setError("");
 
     try {
+      // Fetch pool rates in parallel with stakes
+      fetchRates();
       // Fetch data from all chains in parallel
       const chainPromises = Object.keys(NETWORKS).map((chainId) =>
         fetchChainData(chainId)
@@ -279,7 +312,7 @@ export default function StakeViewer() {
     } finally {
       setLoading(false);
     }
-  }, [address, fetchChainData]);
+  }, [address, fetchChainData, fetchRates]);
 
   // Poll rewards every minute
   const startPolling = useCallback(() => {
@@ -766,6 +799,28 @@ export default function StakeViewer() {
         >
           {loading ? "Loading..." : "Get Stakes"}
         </button>
+      </div>
+      {/* Pool rates line */}
+      <div className="w-full text-center text-sm text-gray-700 dark:text-gray-200 mb-2">
+        <span className="font-semibold">Current Rates:</span>{" "}
+        {Object.keys(NETWORKS).map((chainId, idx, arr) => {
+          const rate = poolRates[chainId];
+          const highlight = rate != null && rate > 0.33;
+          const highlightClass = highlight
+            ? "text-green-700 dark:text-green-400 font-bold"
+            : "";
+          return (
+            <span key={chainId}>
+              <span className={highlightClass}>{NETWORKS[chainId].name}</span>{" "}
+              {rate != null ? (
+                <span className={highlightClass}>{rate.toFixed(2)}%</span>
+              ) : (
+                "N/A"
+              )}
+              {idx < arr.length - 1 ? ", " : ""}
+            </span>
+          );
+        })}
       </div>
       {hasAnyStakes && (
         <>
