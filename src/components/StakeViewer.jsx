@@ -834,15 +834,35 @@ export default function StakeViewer() {
                   />
                   {/* Pagination controls */}
                   {filteredAndSortedStakes.length > 10 && (
-                    <div className="flex flex-col sm:flex-row justify-center items-center gap-2 mt-4">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-row flex-nowrap justify-between items-center gap-2 mt-4 w-full overflow-x-auto">
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <label
+                          htmlFor="stakes-rows-per-page"
+                          className="text-sm dark:text-white"
+                        >
+                          Rows per page:
+                        </label>
+                        <select
+                          id="stakes-rows-per-page"
+                          className="border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
+                          value={rowsPerPage}
+                          onChange={(e) =>
+                            setRowsPerPage(Number(e.target.value))
+                          }
+                        >
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                         <button
                           className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
                           onClick={() => setStakesPage(1)}
                           disabled={stakesPage === 1}
                           aria-label="First page"
                         >
-                          {"<<"}
+                          {"|<"}
                         </button>
                         <button
                           className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
@@ -875,28 +895,8 @@ export default function StakeViewer() {
                           disabled={stakesPage === totalStakesPages}
                           aria-label="Last page"
                         >
-                          {">>"}
+                          {">|"}
                         </button>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <label
-                          htmlFor="stakes-rows-per-page"
-                          className="text-sm dark:text-white"
-                        >
-                          Rows per page:
-                        </label>
-                        <select
-                          id="stakes-rows-per-page"
-                          className="border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
-                          value={rowsPerPage}
-                          onChange={(e) =>
-                            setRowsPerPage(Number(e.target.value))
-                          }
-                        >
-                          <option value={10}>10</option>
-                          <option value={20}>20</option>
-                          <option value={50}>50</option>
-                        </select>
                       </div>
                     </div>
                   )}
