@@ -620,6 +620,14 @@ export default function StakeViewer() {
     );
   }
 
+  // Determine if user has any stakes on any chain
+  const hasAnyStakes = Object.values(stakesCache).some(
+    (arr) => Array.isArray(arr) && arr.length > 0
+  );
+  // Determine if user has stakes on the current chain
+  const hasStakesOnCurrentChain =
+    Array.isArray(stakesCache[network]) && stakesCache[network].length > 0;
+
   return (
     <div className="w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-white dark:bg-gray-800 shadow rounded">
       <div className="flex justify-between items-center mb-6">
@@ -750,118 +758,138 @@ export default function StakeViewer() {
           {loading ? "Loading..." : "Get Stakes"}
         </button>
       </div>
-      <NetworkSelector network={network} onNetworkChange={updateChain} />
-      {error && (
-        <p className="text-red-600 dark:text-red-400 mb-4 text-sm">{error}</p>
-      )}
-      {Object.keys(chainTotals).length > 0 && (
-        <ChainSummaryTable chainTotals={chainTotals} />
-      )}
-      {/* Withdrawals section logic - moved after summary table */}
-      {(() => {
-        if (!withdrawals || withdrawals.length === 0) return null;
-        const pending = withdrawals.filter((w) => Number(w.amount) > 0);
-        const completed = withdrawals.filter((w) => Number(w.amount) === 0);
-        if (pending.length > 0 || showCompletedWithdrawals) {
-          return (
-            <WithdrawalsTable
-              withdrawals={showCompletedWithdrawals ? withdrawals : pending}
-              network={network}
-              showCompleted={showCompletedWithdrawals}
-              onShowCompletedChange={setShowCompletedWithdrawals}
-              withdrawnAmountsByStakeId={withdrawnAmountsByStakeId}
-            />
-          );
-        } else if (completed.length > 0) {
-          return (
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-gray-700 dark:text-gray-200">
-                  No pending withdrawals.
-                </span>
-                <button
-                  className="text-blue-600 dark:text-blue-400 underline text-sm"
-                  onClick={() => setShowCompletedWithdrawals(true)}
-                >
-                  Show completed withdrawals
-                </button>
-              </div>
-            </div>
-          );
-        }
-        return null;
-      })()}
-      {filteredAndSortedStakes?.length > 0 && (
+      {hasAnyStakes && (
         <>
-          <StakesTable
-            stakes={pagedStakes}
-            network={network}
-            hideCompleted={hideCompleted}
-            setHideCompleted={setHideCompleted}
-            requestSort={requestSort}
-            getSortIcon={(key) => getSortIcon(sortConfig, key)}
-          />
-          {/* Pagination controls */}
-          {filteredAndSortedStakes.length > 10 && (
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-2 mt-4">
-              <div className="flex items-center gap-2">
-                <button
-                  className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
-                  onClick={() => setStakesPage(1)}
-                  disabled={stakesPage === 1}
-                  aria-label="First page"
-                >
-                  {"<<"}
-                </button>
-                <button
-                  className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
-                  onClick={() => setStakesPage((p) => Math.max(1, p - 1))}
-                  disabled={stakesPage === 1}
-                  aria-label="Previous page"
-                >
-                  {"<"}
-                </button>
-                <span className="text-sm dark:text-white">
-                  Page {stakesPage} of {totalStakesPages}
-                </span>
-                <button
-                  className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
-                  onClick={() =>
-                    setStakesPage((p) => Math.min(totalStakesPages, p + 1))
-                  }
-                  disabled={stakesPage === totalStakesPages}
-                  aria-label="Next page"
-                >
-                  {">"}
-                </button>
-                <button
-                  className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
-                  onClick={() => setStakesPage(totalStakesPages)}
-                  disabled={stakesPage === totalStakesPages}
-                  aria-label="Last page"
-                >
-                  {">>"}
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor="stakes-rows-per-page"
-                  className="text-sm dark:text-white"
-                >
-                  Rows per page:
-                </label>
-                <select
-                  id="stakes-rows-per-page"
-                  className="border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
-                  value={rowsPerPage}
-                  onChange={(e) => setRowsPerPage(Number(e.target.value))}
-                >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
-              </div>
-            </div>
+          <NetworkSelector network={network} onNetworkChange={updateChain} />
+          {error && (
+            <p className="text-red-600 dark:text-red-400 mb-4 text-sm">
+              {error}
+            </p>
+          )}
+          {Object.keys(chainTotals).length > 0 && (
+            <ChainSummaryTable chainTotals={chainTotals} />
+          )}
+          {hasStakesOnCurrentChain && (
+            <>
+              {/* Withdrawals section logic - moved after summary table */}
+              {(() => {
+                if (!withdrawals || withdrawals.length === 0) return null;
+                const pending = withdrawals.filter((w) => Number(w.amount) > 0);
+                const completed = withdrawals.filter(
+                  (w) => Number(w.amount) === 0
+                );
+                if (pending.length > 0 || showCompletedWithdrawals) {
+                  return (
+                    <WithdrawalsTable
+                      withdrawals={
+                        showCompletedWithdrawals ? withdrawals : pending
+                      }
+                      network={network}
+                      showCompleted={showCompletedWithdrawals}
+                      onShowCompletedChange={setShowCompletedWithdrawals}
+                      withdrawnAmountsByStakeId={withdrawnAmountsByStakeId}
+                    />
+                  );
+                } else if (completed.length > 0) {
+                  return (
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-gray-700 dark:text-gray-200">
+                          No pending withdrawals.
+                        </span>
+                        <button
+                          className="text-blue-600 dark:text-blue-400 underline text-sm"
+                          onClick={() => setShowCompletedWithdrawals(true)}
+                        >
+                          Show completed withdrawals
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+              {filteredAndSortedStakes?.length > 0 && (
+                <>
+                  <StakesTable
+                    stakes={pagedStakes}
+                    network={network}
+                    hideCompleted={hideCompleted}
+                    setHideCompleted={setHideCompleted}
+                    requestSort={requestSort}
+                    getSortIcon={(key) => getSortIcon(sortConfig, key)}
+                  />
+                  {/* Pagination controls */}
+                  {filteredAndSortedStakes.length > 10 && (
+                    <div className="flex flex-col sm:flex-row justify-center items-center gap-2 mt-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
+                          onClick={() => setStakesPage(1)}
+                          disabled={stakesPage === 1}
+                          aria-label="First page"
+                        >
+                          {"<<"}
+                        </button>
+                        <button
+                          className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
+                          onClick={() =>
+                            setStakesPage((p) => Math.max(1, p - 1))
+                          }
+                          disabled={stakesPage === 1}
+                          aria-label="Previous page"
+                        >
+                          {"<"}
+                        </button>
+                        <span className="text-sm dark:text-white">
+                          Page {stakesPage} of {totalStakesPages}
+                        </span>
+                        <button
+                          className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
+                          onClick={() =>
+                            setStakesPage((p) =>
+                              Math.min(totalStakesPages, p + 1)
+                            )
+                          }
+                          disabled={stakesPage === totalStakesPages}
+                          aria-label="Next page"
+                        >
+                          {">"}
+                        </button>
+                        <button
+                          className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 disabled:opacity-50"
+                          onClick={() => setStakesPage(totalStakesPages)}
+                          disabled={stakesPage === totalStakesPages}
+                          aria-label="Last page"
+                        >
+                          {">>"}
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label
+                          htmlFor="stakes-rows-per-page"
+                          className="text-sm dark:text-white"
+                        >
+                          Rows per page:
+                        </label>
+                        <select
+                          id="stakes-rows-per-page"
+                          className="border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
+                          value={rowsPerPage}
+                          onChange={(e) =>
+                            setRowsPerPage(Number(e.target.value))
+                          }
+                        >
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
           )}
         </>
       )}
