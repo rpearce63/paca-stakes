@@ -628,6 +628,15 @@ export default function StakeViewer() {
   const hasStakesOnCurrentChain =
     Array.isArray(stakesCache[network]) && stakesCache[network].length > 0;
 
+  // List of chainIds with stakes
+  const chainsWithStakes = Object.keys(stakesCache).filter(
+    (chainId) =>
+      Array.isArray(stakesCache[chainId]) &&
+      stakesCache[chainId].length > 0 &&
+      chainTotals[chainId] &&
+      chainTotals[chainId].totalStaked > 0
+  );
+
   return (
     <div className="w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-white dark:bg-gray-800 shadow rounded">
       <div className="flex justify-between items-center mb-6">
@@ -760,13 +769,17 @@ export default function StakeViewer() {
       </div>
       {hasAnyStakes && (
         <>
-          <NetworkSelector network={network} onNetworkChange={updateChain} />
+          <NetworkSelector
+            network={network}
+            onNetworkChange={updateChain}
+            chainsWithStakes={chainsWithStakes}
+          />
           {error && (
             <p className="text-red-600 dark:text-red-400 mb-4 text-sm">
               {error}
             </p>
           )}
-          {Object.keys(chainTotals).length > 0 && (
+          {chainsWithStakes.length > 0 && (
             <ChainSummaryTable chainTotals={chainTotals} />
           )}
           {hasStakesOnCurrentChain && (

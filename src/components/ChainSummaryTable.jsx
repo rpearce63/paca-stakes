@@ -51,44 +51,45 @@ export default function ChainSummaryTable({ chainTotals }) {
             </tr>
           </thead>
           <tbody>
-            {Object.entries(chainTotals).map(([chainId, data]) => {
-              const dailyAPR =
-                data.totalStaked > 0
-                  ? (data.dailyEarnings / data.totalStaked) * 100
-                  : 0;
-              const annualAPR = dailyAPR * 365;
-
-              return (
-                <tr
-                  key={chainId}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium dark:text-white">
-                    {NETWORKS[chainId].name} ({NETWORKS[chainId].token})
-                  </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                    {formatCurrency(data.totalStaked)}
-                  </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                    {formatCurrency(data.rewards)}
-                  </td>
-                  <td
-                    className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white"
-                    title={`Weekly: ${formatCurrency(
-                      data.dailyEarnings * 7
-                    )}\nMonthly: ${formatCurrency(data.dailyEarnings * 30)}`}
+            {Object.entries(chainTotals)
+              .filter(([, data]) => data.totalStaked > 0)
+              .map(([chainId, data]) => {
+                const dailyAPR =
+                  data.totalStaked > 0
+                    ? (data.dailyEarnings / data.totalStaked) * 100
+                    : 0;
+                const annualAPR = dailyAPR * 365;
+                return (
+                  <tr
+                    key={chainId}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
-                    {formatCurrency(data.dailyEarnings)}
-                  </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                    {dailyAPR.toFixed(2)}%
-                  </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
-                    {annualAPR.toFixed(2)}%
-                  </td>
-                </tr>
-              );
-            })}
+                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium dark:text-white">
+                      {NETWORKS[chainId].name} ({NETWORKS[chainId].token})
+                    </td>
+                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                      {formatCurrency(data.totalStaked)}
+                    </td>
+                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                      {formatCurrency(data.rewards)}
+                    </td>
+                    <td
+                      className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white"
+                      title={`Weekly: ${formatCurrency(
+                        data.dailyEarnings * 7
+                      )}\nMonthly: ${formatCurrency(data.dailyEarnings * 30)}`}
+                    >
+                      {formatCurrency(data.dailyEarnings)}
+                    </td>
+                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                      {dailyAPR.toFixed(2)}%
+                    </td>
+                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                      {annualAPR.toFixed(2)}%
+                    </td>
+                  </tr>
+                );
+              })}
             <tr className="bg-blue-50 dark:bg-blue-900/20 font-semibold">
               <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
                 TOTAL

@@ -1,10 +1,18 @@
 import React from "react";
 import { NETWORKS } from "../constants/networks";
 
-export default function NetworkSelector({ network, onNetworkChange }) {
+export default function NetworkSelector({
+  network,
+  onNetworkChange,
+  chainsWithStakes,
+}) {
+  const chainIds =
+    Array.isArray(chainsWithStakes) && chainsWithStakes.length > 0
+      ? chainsWithStakes
+      : Object.keys(NETWORKS);
   return (
     <div className="flex flex-wrap gap-2 mb-4">
-      {Object.keys(NETWORKS).map((chainId) => (
+      {chainIds.map((chainId) => (
         <button
           key={chainId}
           onClick={() => onNetworkChange(chainId)}
