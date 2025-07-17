@@ -9,6 +9,7 @@ import MultiWalletSummary from "./MultiWalletSummary";
 import WithdrawalsTable from "./WithdrawalsTable";
 import { Interface } from "ethers";
 import { zeroPadValue, getAddress } from "ethers";
+import { useData } from "../contexts/DataContext";
 
 // BscScan API key from environment
 const BSCSCAN_API_KEY = import.meta.env.VITE_BSCSCAN_API_KEY;
@@ -49,20 +50,25 @@ async function fetchLogsFromBscScan({
 }
 
 export default function StakeViewer() {
+  const {
+    stakesCache,
+    setStakesCache,
+    chainTotals,
+    setChainTotals,
+    poolRates,
+    network,
+    setNetwork,
+  } = useData();
   const [address, setAddress] = useState("");
   const [addressList, setAddressList] = useState([]);
   const [stakes, setStakes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [network, setNetwork] = useState("bsc");
-  const [chainTotals, setChainTotals] = useState({});
   const [sortConfig, setSortConfig] = useState({
     key: "daysLeft",
     direction: "asc",
   });
   const [hideCompleted, setHideCompleted] = useState(true);
-  const [stakesCache, setStakesCache] = useState({});
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [viewMode, setViewMode] = useState("single");
   const networkRef = useRef(network);
   const pollingIntervalRef = useRef(null);
@@ -75,13 +81,13 @@ export default function StakeViewer() {
   const [withdrawnAmountsByStakeId, setWithdrawnAmountsByStakeId] = useState(
     {}
   );
+  const [stakesPage, setStakesPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const filteredAndSortedStakes = sortData(
     stakes.filter((stake) => !hideCompleted || !stake.complete),
     sortConfig,
     NETWORKS[network].decimals
   );
-  const [stakesPage, setStakesPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
   const totalStakesPages = Math.max(
     1,
     Math.ceil(filteredAndSortedStakes.length / rowsPerPage)
@@ -91,36 +97,10 @@ export default function StakeViewer() {
     stakesPage * rowsPerPage
   );
 
-  // State for current pool rates
-  const [poolRates, setPoolRates] = useState({});
-
-  // Fetch pool rates for all chains
-  const fetchRates = useCallback(async () => {
-    const rates = {};
-    await Promise.all(
-      Object.keys(NETWORKS).map(async (chainId) => {
-        try {
-          const provider = new ethers.JsonRpcProvider(NETWORKS[chainId].rpc);
-          const contract = new ethers.Contract(
-            NETWORKS[chainId].contract,
-            NETWORKS[chainId].abi,
-            provider
-          );
-          const pool = await contract.pool();
-          // pool.dailyRewardRate is in basis points (e.g., 1234 = 12.34%)
-          rates[chainId] = Number(pool.dailyRewardRate) / 100;
-        } catch {
-          rates[chainId] = null;
-        }
-      })
-    );
-    setPoolRates(rates);
-  }, []);
-
   // Fetch pool rates on mount
   useEffect(() => {
-    fetchRates();
-  }, [fetchRates]);
+    // fetchRates(); // This is now handled by useData
+  }, []);
 
   // Update ref when network changes
   useEffect(() => {
@@ -273,7 +253,7 @@ export default function StakeViewer() {
 
     try {
       // Fetch pool rates in parallel with stakes
-      fetchRates();
+      // fetchRates(); // This is now handled by useData
       // Fetch data from all chains in parallel
       const chainPromises = Object.keys(NETWORKS).map((chainId) =>
         fetchChainData(chainId)
@@ -303,8 +283,6 @@ export default function StakeViewer() {
       if (newStakesCache[networkRef.current]) {
         setStakes(newStakesCache[networkRef.current]);
       }
-
-      setIsInitialLoad(false);
     } catch (error) {
       console.error("Error fetching chain data:", error);
       setError("Failed to fetch data. Make sure the address is correct.");
@@ -312,7 +290,7 @@ export default function StakeViewer() {
     } finally {
       setLoading(false);
     }
-  }, [address, fetchChainData, fetchRates]);
+  }, [address, fetchChainData, fetchRewards]);
 
   // Poll rewards every minute
   const startPolling = useCallback(() => {
@@ -384,12 +362,14 @@ export default function StakeViewer() {
     };
   }, [address, fetchAllChains, startPolling, stopPolling]);
 
-  // Update stakes when network changes (if we have cached data)
+  // Always set stakes from cache for the selected network on mount or when network/cache changes
   useEffect(() => {
-    if (stakesCache[network] && !isInitialLoad) {
+    if (stakesCache[network]) {
       setStakes(stakesCache[network]);
+    } else {
+      setStakes([]);
     }
-  }, [network, stakesCache, isInitialLoad]);
+  }, [network, stakesCache]);
 
   // Reset to page 1 if stakes or network changes
   useEffect(() => {
@@ -544,35 +524,12 @@ export default function StakeViewer() {
     fetchWithdrawnLogs();
   }, [address, network, withdrawals]);
 
-  const updateChain = async (chain) => {
+  const updateChain = (chain) => {
     setNetwork(chain);
-
     if (stakesCache[chain]) {
       setStakes(stakesCache[chain]);
-      // Only fetch rewards for the selected chain
-      const rewards = await fetchRewards(chain);
-      setChainTotals((prev) => ({
-        ...prev,
-        [chain]: {
-          ...prev[chain],
-          rewards: rewards,
-        },
-      }));
-    } else if (!isInitialLoad) {
-      // If we don't have cached data and it's not the initial load,
-      // fetch data for this chain
-      const result = await fetchChainData(chain);
-      if (result) {
-        setStakes(result.stakes);
-        setChainTotals((prev) => ({
-          ...prev,
-          [chain]: {
-            totalStaked: result.totalStaked,
-            rewards: result.rewards,
-            dailyEarnings: result.dailyEarnings,
-          },
-        }));
-      }
+    } else {
+      setStakes([]);
     }
   };
 
