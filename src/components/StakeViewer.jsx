@@ -670,6 +670,48 @@ export default function StakeViewer() {
       chainTotals[chainId].totalStaked > 0
   );
 
+  // Export address list to file
+  const handleExportAddresses = () => {
+    const dataStr = JSON.stringify(addressList, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "paca_stakes_addresses.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Import address list from file
+  const handleImportAddresses = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const imported = JSON.parse(event.target.result);
+        if (!Array.isArray(imported)) throw new Error("Invalid format");
+        // Merge, dedupe, and keep max 10
+        const merged = Array.from(new Set([...imported, ...addressList])).slice(
+          0,
+          10
+        );
+        setAddressList(merged);
+        localStorage.setItem(
+          "paca_stakes_address_list",
+          JSON.stringify(merged)
+        );
+      } catch {
+        alert("Failed to import addresses. Please select a valid JSON file.");
+      }
+    };
+    reader.readAsText(file);
+    // Reset input value so same file can be re-imported if needed
+    e.target.value = "";
+  };
+
   return (
     <div className="w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-white dark:bg-gray-800 shadow rounded">
       <div className="flex justify-between items-center mb-6">
@@ -686,6 +728,25 @@ export default function StakeViewer() {
         )}
       </div>
       <div className="flex flex-col sm:flex-row gap-2 mb-4 w-full">
+        <div className="flex flex-row gap-2 mb-2">
+          <button
+            type="button"
+            className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm"
+            onClick={handleExportAddresses}
+            disabled={addressList.length === 0}
+          >
+            Export Addresses
+          </button>
+          <label className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm cursor-pointer">
+            Import Addresses
+            <input
+              type="file"
+              accept="application/json"
+              onChange={handleImportAddresses}
+              style={{ display: "none" }}
+            />
+          </label>
+        </div>
         <div className="relative w-full flex flex-row gap-2">
           <input
             ref={inputRef}
