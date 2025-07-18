@@ -47,8 +47,12 @@ export const secondsLeft = (unlockTimestamp) => {
   return diffMs > 0 ? Math.floor(diffMs / 1000) : 0;
 };
 
-export const formatTimeLeft = (unlockTimestamp) => {
-  const seconds = secondsLeft(unlockTimestamp);
+export const formatTimeLeft = (unlockTimestamp, nowOverride) => {
+  const now = nowOverride !== undefined ? nowOverride : Date.now();
+  if (!unlockTimestamp) return "0";
+  const unlockDate = new Date(Number(unlockTimestamp) * 1000);
+  const diffMs = unlockDate - now;
+  const seconds = diffMs > 0 ? Math.floor(diffMs / 1000) : 0;
   if (seconds <= 0) return "0";
   const days = Math.floor(seconds / (60 * 60 * 24));
   const hours = Math.floor((seconds % (60 * 60 * 24)) / (60 * 60));
@@ -60,6 +64,9 @@ export const formatTimeLeft = (unlockTimestamp) => {
   } else {
     const totalHours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
-    return `${totalHours}h:${mins}m`;
+    const secs = seconds % 60;
+    return `${totalHours}h:${mins.toString().padStart(2, "0")}m:${secs
+      .toString()
+      .padStart(2, "0")}s`;
   }
 };

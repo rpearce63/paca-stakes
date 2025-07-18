@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { formatAmount, formatDate, formatTimeLeft } from "../utils/formatters";
 import { NETWORKS } from "../constants/networks";
 
@@ -12,6 +12,14 @@ export default function WithdrawalsTable({
   const decimals = NETWORKS[network].decimals;
   const showWithdrawnAmountCol = showCompleted;
   const showWithdrawnDateCol = showCompleted;
+
+  // State to trigger re-render every second for live countdown
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-4">
@@ -103,7 +111,7 @@ export default function WithdrawalsTable({
                     </td>
                   )}
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
-                    {formatTimeLeft(w.unlockTime)}
+                    {!isCompleted ? formatTimeLeft(w.unlockTime, now) : "-"}
                   </td>
                 </tr>
               );
