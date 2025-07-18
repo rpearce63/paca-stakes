@@ -154,12 +154,11 @@ export default function Marketplace() {
             })
         );
         if (!cancelled) setAllStakesByChain(allStakes);
-      } catch (err) {
+      } catch {
         setError("Failed to load marketplace stakes.");
         setStakes([]);
         setAllStakesByChain({});
-        // eslint-disable-next-line no-console
-        console.error(err);
+        // console.error(err);
       } finally {
         setLoading(false);
       }
@@ -169,7 +168,6 @@ export default function Marketplace() {
       cancelled = true;
     };
     // Only refetch if selectedChain changes (to update visible table)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedChain]);
 
   // Poll for new data every minute
@@ -212,9 +210,8 @@ export default function Marketplace() {
                 })
             );
             if (!cancelled) setAllStakesByChain(allStakes);
-          } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error("Polling error:", err);
+          } catch {
+            // console.error("Polling error:", err);
           }
         })();
       }

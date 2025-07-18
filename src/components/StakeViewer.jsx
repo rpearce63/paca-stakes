@@ -290,7 +290,7 @@ export default function StakeViewer() {
     } finally {
       setLoading(false);
     }
-  }, [address, fetchChainData, fetchRewards]);
+  }, [address, fetchChainData, fetchRewards, setChainTotals, setStakesCache]);
 
   // Poll rewards every minute
   const startPolling = useCallback(() => {
@@ -333,7 +333,7 @@ export default function StakeViewer() {
     pollingIntervalRef.currentStake = setInterval(() => {
       fetchAllChains();
     }, 300000); // 5 minutes
-  }, [address, fetchRewards, fetchAllChains]);
+  }, [address, fetchRewards, fetchAllChains, setChainTotals]);
 
   // Stop polling
   const stopPolling = useCallback(() => {
@@ -865,9 +865,6 @@ export default function StakeViewer() {
                   if (!withdrawals || withdrawals.length === 0) return null;
                   const pending = withdrawals.filter(
                     (w) => Number(w.amount) > 0
-                  );
-                  const completed = withdrawals.filter(
-                    (w) => Number(w.amount) === 0
                   );
                   if (pending.length > 0 || showCompletedWithdrawals) {
                     return (
