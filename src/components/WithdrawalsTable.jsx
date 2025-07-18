@@ -28,12 +28,19 @@ export default function WithdrawalsTable({
             ? "Withdrawals (including completed)"
             : "Pending Withdrawals"}
         </h2>
-        {showCompleted && (
+        {showCompleted ? (
           <button
             className="text-blue-600 dark:text-blue-400 underline text-sm"
             onClick={() => onShowCompletedChange(false)}
           >
             Hide completed withdrawals
+          </button>
+        ) : (
+          <button
+            className="text-blue-600 dark:text-blue-400 underline text-sm"
+            onClick={() => onShowCompletedChange(true)}
+          >
+            Show completed withdrawals
           </button>
         )}
       </div>
@@ -111,7 +118,9 @@ export default function WithdrawalsTable({
                     </td>
                   )}
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
-                    {!isCompleted ? formatTimeLeft(w.unlockTime, now) : "-"}
+                    {!isCompleted
+                      ? formatTimeLeft(w.unlockTime, now, { showSeconds: true })
+                      : "-"}
                   </td>
                 </tr>
               );

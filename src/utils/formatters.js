@@ -47,26 +47,28 @@ export const secondsLeft = (unlockTimestamp) => {
   return diffMs > 0 ? Math.floor(diffMs / 1000) : 0;
 };
 
-export const formatTimeLeft = (unlockTimestamp, nowOverride) => {
+export const formatTimeLeft = (unlockTimestamp, nowOverride, options = {}) => {
   const now = nowOverride !== undefined ? nowOverride : Date.now();
   if (!unlockTimestamp) return "0";
   const unlockDate = new Date(Number(unlockTimestamp) * 1000);
   const diffMs = unlockDate - now;
   const seconds = diffMs > 0 ? Math.floor(diffMs / 1000) : 0;
   if (seconds <= 0) return "0";
+  const totalHours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  if (options.showSeconds) {
+    const secs = seconds % 60;
+    return `${totalHours.toString().padStart(2, "0")}:${mins
+      .toString()
+      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  }
   const days = Math.floor(seconds / (60 * 60 * 24));
   const hours = Math.floor((seconds % (60 * 60 * 24)) / (60 * 60));
-
   if (days >= 7) {
     return `${days}d`;
   } else if (days >= 1) {
     return `${days}d:${hours}h`;
   } else {
-    const totalHours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${totalHours}h:${mins.toString().padStart(2, "0")}m:${secs
-      .toString()
-      .padStart(2, "0")}s`;
+    return `${totalHours}h:${mins.toString().padStart(2, "0")}m`;
   }
 };
