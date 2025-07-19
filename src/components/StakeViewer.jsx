@@ -292,6 +292,39 @@ export default function StakeViewer() {
     }
   }, [address, fetchChainData, fetchRewards, setChainTotals, setStakesCache]);
 
+  // Fetch withdrawals for the current address and network
+  const fetchWithdrawals = useCallback(async () => {
+    if (!address || !ethers.isAddress(address)) {
+      setWithdrawals([]);
+      return;
+    }
+    try {
+      const provider = new ethers.JsonRpcProvider(NETWORKS[network].rpc);
+      const contract = new ethers.Contract(
+        NETWORKS[network].contract,
+        NETWORKS[network].abi,
+        provider
+      );
+      const result = await contract.getAllWithdrawStakes(address);
+      // result is array of { stakeId, amount, unlockTime }
+      setWithdrawals(
+        result.map((w) => ({
+          stakeId: w.stakeId?.toString?.() ?? w.stakeId,
+          amount: w.amount?.toString?.() ?? w.amount,
+          unlockTime: w.unlockTime?.toString?.() ?? w.unlockTime,
+        }))
+      );
+    } catch {
+      setWithdrawals([]);
+      // Optionally log error
+    }
+  }, [address, network]);
+
+  // Fetch withdrawals when address or network changes
+  useEffect(() => {
+    fetchWithdrawals();
+  }, [fetchWithdrawals]);
+
   // Poll rewards every minute
   const startPolling = useCallback(() => {
     if (!address) return;
@@ -387,39 +420,6 @@ export default function StakeViewer() {
   useEffect(() => {
     setStakesPage(1);
   }, [stakes, network, address, rowsPerPage]);
-
-  // Fetch withdrawals for the current address and network
-  const fetchWithdrawals = useCallback(async () => {
-    if (!address || !ethers.isAddress(address)) {
-      setWithdrawals([]);
-      return;
-    }
-    try {
-      const provider = new ethers.JsonRpcProvider(NETWORKS[network].rpc);
-      const contract = new ethers.Contract(
-        NETWORKS[network].contract,
-        NETWORKS[network].abi,
-        provider
-      );
-      const result = await contract.getAllWithdrawStakes(address);
-      // result is array of { stakeId, amount, unlockTime }
-      setWithdrawals(
-        result.map((w) => ({
-          stakeId: w.stakeId?.toString?.() ?? w.stakeId,
-          amount: w.amount?.toString?.() ?? w.amount,
-          unlockTime: w.unlockTime?.toString?.() ?? w.unlockTime,
-        }))
-      );
-    } catch {
-      setWithdrawals([]);
-      // Optionally log error
-    }
-  }, [address, network]);
-
-  // Fetch withdrawals when address or network changes
-  useEffect(() => {
-    fetchWithdrawals();
-  }, [fetchWithdrawals]);
 
   // Fetch withdrawn amounts from logs for completed withdrawals
   useEffect(() => {
