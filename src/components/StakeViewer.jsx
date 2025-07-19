@@ -627,6 +627,24 @@ export default function StakeViewer() {
       chainTotals[chainId].totalStaked > 0
   );
 
+  // Ensure the selected network is always one with stakes if possible
+  useEffect(() => {
+    if (
+      chainsWithStakes.length > 0 &&
+      (!chainsWithStakes.includes(network) ||
+        !(
+          Array.isArray(stakesCache[network]) &&
+          stakesCache[network].length > 0 &&
+          chainTotals[network] &&
+          chainTotals[network].totalStaked > 0
+        ))
+    ) {
+      setNetwork(chainsWithStakes[0]);
+    }
+    // Only run when chainsWithStakes or network changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chainsWithStakes, network, stakesCache, chainTotals]);
+
   // Export address list to file
   const handleExportAddresses = () => {
     const dataStr = JSON.stringify(addressList, null, 2);
