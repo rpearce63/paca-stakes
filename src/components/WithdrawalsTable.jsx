@@ -20,6 +20,11 @@ export default function WithdrawalsTable({
     return () => clearInterval(interval);
   }, []);
 
+  // Calculate total pending amount
+  const totalPendingAmount = withdrawals
+    .filter((w) => Number(w.amount) > 0)
+    .reduce((sum, w) => sum + Number(w.amount), 0);
+
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-4">
@@ -125,6 +130,35 @@ export default function WithdrawalsTable({
                 </tr>
               );
             })}
+            {/* Total row for pending amounts */}
+            {!showCompleted && totalPendingAmount > 0 && (
+              <tr className="bg-blue-50 dark:bg-blue-900/20 font-semibold">
+                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                  <strong>Total Pending</strong>
+                </td>
+                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                  <strong>
+                    {formatAmount(totalPendingAmount.toString(), decimals)}
+                  </strong>
+                </td>
+                {showWithdrawnAmountCol && (
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                    -
+                  </td>
+                )}
+                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                  -
+                </td>
+                {showWithdrawnDateCol && (
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                    -
+                  </td>
+                )}
+                <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                  -
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
