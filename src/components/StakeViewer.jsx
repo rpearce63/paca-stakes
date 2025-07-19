@@ -303,6 +303,9 @@ export default function StakeViewer() {
     if (pollingIntervalRef.currentStake) {
       clearInterval(pollingIntervalRef.currentStake);
     }
+    if (pollingIntervalRef.currentWithdrawals) {
+      clearInterval(pollingIntervalRef.currentWithdrawals);
+    }
 
     // Start polling rewards every minute (60000ms)
     pollingIntervalRef.current = setInterval(async () => {
@@ -333,7 +336,12 @@ export default function StakeViewer() {
     pollingIntervalRef.currentStake = setInterval(() => {
       fetchAllChains();
     }, 300000); // 5 minutes
-  }, [address, fetchRewards, fetchAllChains, setChainTotals]);
+
+    // Start polling withdrawals every minute (60000ms) - same as rewards
+    pollingIntervalRef.currentWithdrawals = setInterval(() => {
+      fetchWithdrawals();
+    }, 60000); // 1 minute
+  }, [address, fetchRewards, fetchAllChains, fetchWithdrawals, setChainTotals]);
 
   // Stop polling
   const stopPolling = useCallback(() => {
@@ -344,6 +352,10 @@ export default function StakeViewer() {
     if (pollingIntervalRef.currentStake) {
       clearInterval(pollingIntervalRef.currentStake);
       pollingIntervalRef.currentStake = null;
+    }
+    if (pollingIntervalRef.currentWithdrawals) {
+      clearInterval(pollingIntervalRef.currentWithdrawals);
+      pollingIntervalRef.currentWithdrawals = null;
     }
   }, []);
 
@@ -599,17 +611,6 @@ export default function StakeViewer() {
     setViewMode(viewMode === "single" ? "multi" : "single");
   };
 
-  // Show multi-wallet view if multiple addresses and in multi mode
-  if (viewMode === "multi" && addressList.length > 1) {
-    return (
-      <MultiWalletSummary
-        addressList={addressList}
-        onAddressClick={handleAddressClick}
-        onBackToSingle={handleBackToSingle}
-      />
-    );
-  }
-
   // Determine if user has any stakes on any chain
   const hasAnyStakes = Object.values(stakesCache).some(
     (arr) => Array.isArray(arr) && arr.length > 0
@@ -644,6 +645,17 @@ export default function StakeViewer() {
     // Only run when chainsWithStakes or network changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chainsWithStakes, network, stakesCache, chainTotals]);
+
+  // Show multi-wallet view if multiple addresses and in multi mode
+  if (viewMode === "multi" && addressList.length > 1) {
+    return (
+      <MultiWalletSummary
+        addressList={addressList}
+        onAddressClick={handleAddressClick}
+        onBackToSingle={handleBackToSingle}
+      />
+    );
+  }
 
   // Export address list to file
   const handleExportAddresses = () => {
