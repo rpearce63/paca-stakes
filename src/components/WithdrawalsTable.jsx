@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { formatAmount, formatDate, formatTimeLeft } from "../utils/formatters";
 import { NETWORKS } from "../constants/networks";
 
@@ -24,6 +24,21 @@ export default function WithdrawalsTable({
   const totalPendingAmount = withdrawals
     .filter((w) => Number(w.amount) > 0)
     .reduce((sum, w) => sum + Number(w.amount), 0);
+
+  // Calculate total withdrawn amount
+  const totalWithdrawnAmount = useMemo(() => {
+    let manualTotal = 0;
+    if (withdrawals && withdrawals.length > 0) {
+      const completed = withdrawals.filter((w) => Number(w.amount) === 0);
+      completed.forEach((w) => {
+        if (withdrawnAmountsByStakeId && withdrawnAmountsByStakeId[w.stakeId]) {
+          const amount = Number(withdrawnAmountsByStakeId[w.stakeId].amount);
+          manualTotal += amount;
+        }
+      });
+    }
+    return manualTotal;
+  }, [withdrawals, withdrawnAmountsByStakeId]);
 
   return (
     <div className="mb-6">
@@ -130,7 +145,7 @@ export default function WithdrawalsTable({
                 </tr>
               );
             })}
-            {/* Total row for pending amounts */}
+            {/* Total row for pending amounts only */}
             {!showCompleted && totalPendingAmount > 0 && (
               <tr className="bg-blue-50 dark:bg-blue-900/20 font-semibold">
                 <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
@@ -159,6 +174,47 @@ export default function WithdrawalsTable({
                 </td>
               </tr>
             )}
+            {/* Total rows for all withdrawals (including completed) */}
+            {showCompleted &&
+              (totalPendingAmount > 0 || totalWithdrawnAmount > 0) && (
+                <tr className="bg-gray-100 dark:bg-gray-700 font-semibold">
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                    <strong>Totals</strong>
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                    <strong>
+                      {totalPendingAmount > 0
+                        ? formatAmount(totalPendingAmount.toString(), decimals)
+                        : "-"}
+                    </strong>
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white">
+                    <strong>
+                      {totalWithdrawnAmount > 0
+                        ? (() => {
+                            const decimalString =
+                              totalWithdrawnAmount.toLocaleString("fullwide", {
+                                useGrouping: false,
+                              });
+                            return formatAmount(decimalString, decimals);
+                          })()
+                        : Object.keys(withdrawnAmountsByStakeId).length === 0 &&
+                          withdrawals.some((w) => Number(w.amount) === 0)
+                        ? "Loading..."
+                        : "-"}
+                    </strong>
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                    -
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                    -
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 dark:text-white">
+                    -
+                  </td>
+                </tr>
+              )}
           </tbody>
         </table>
       </div>

@@ -421,120 +421,110 @@ export default function StakeViewer() {
     setStakesPage(1);
   }, [stakes, network, address, rowsPerPage]);
 
-  // Fetch withdrawn amounts from logs for completed withdrawals
+  // Fetch withdrawn amounts when withdrawals are first loaded
   useEffect(() => {
-    async function fetchWithdrawnLogs() {
-      if (
-        !address ||
-        !ethers.isAddress(address) ||
-        !withdrawals ||
-        withdrawals.length === 0
-      ) {
-        setWithdrawnAmountsByStakeId({});
-        return;
-      }
-      const completed = withdrawals.filter((w) => Number(w.amount) === 0);
-      if (completed.length === 0) {
-        setWithdrawnAmountsByStakeId({});
-        return;
-      }
-      try {
-        const provider = new ethers.JsonRpcProvider(NETWORKS[network].rpc);
-        const iface = new Interface(NETWORKS[network].abi);
-        const eventTopic = iface.getEvent("StakeWithdrawn").topicHash;
-        const logsByStakeId = {};
-        // Get latest block
-        const latestBlock = await provider.getBlockNumber();
-        const fromBlock = 0; // Use full history for BscScan
-        for (const w of completed) {
-          const userTopic = zeroPadValue(getAddress(address), 32);
-          const topics = [eventTopic, userTopic];
-          let allLogs = [];
-          try {
-            allLogs = await fetchLogsFromBscScan({
-              address: NETWORKS[network].contract,
-              topics,
-              fromBlock,
-              toBlock: latestBlock,
-            });
-          } catch (apiErr) {
-            console.error("BscScan API error:", apiErr);
-            continue;
-          }
-          console.debug(
-            `Merged logs for user ${address} and stakeId ${w.stakeId}:`,
-            allLogs
-          );
-          let found = null;
-          let foundBlockNumber = null;
-          for (const log of allLogs) {
-            // BscScan returns logs as raw objects, need to parse topics/data
-            let parsed;
+    if (withdrawals && withdrawals.length > 0) {
+      // Trigger the log fetching by calling fetchWithdrawnLogs
+      const fetchLogs = async () => {
+        if (
+          !address ||
+          !ethers.isAddress(address) ||
+          !withdrawals ||
+          withdrawals.length === 0
+        ) {
+          return;
+        }
+        const completed = withdrawals.filter((w) => Number(w.amount) === 0);
+        if (completed.length === 0) {
+          return;
+        }
+        // Reuse the same logic as fetchWithdrawnLogs
+        try {
+          const provider = new ethers.JsonRpcProvider(NETWORKS[network].rpc);
+          const iface = new Interface(NETWORKS[network].abi);
+          const eventTopic = iface.getEvent("StakeWithdrawn").topicHash;
+          const logsByStakeId = {};
+          const latestBlock = await provider.getBlockNumber();
+          const fromBlock = 0;
+          for (const w of completed) {
+            const userTopic = zeroPadValue(getAddress(address), 32);
+            const topics = [eventTopic, userTopic];
+            let allLogs = [];
             try {
-              parsed = iface.parseLog({
-                topics: log.topics,
-                data: log.data,
+              allLogs = await fetchLogsFromBscScan({
+                address: NETWORKS[network].contract,
+                topics,
+                fromBlock,
+                toBlock: latestBlock,
               });
-            } catch (parseErr) {
-              console.error("Error parsing log from BscScan:", parseErr, log);
+            } catch (apiErr) {
+              console.error(
+                "BscScan API error for withdrawal",
+                w.stakeId,
+                ":",
+                apiErr
+              );
               continue;
             }
-            console.debug("Parsed log:", parsed);
-            const parsedStakeId =
-              parsed.args.stakeId?.toString?.() ?? String(parsed.args.stakeId);
-            const wantedStakeId = w.stakeId?.toString?.() ?? String(w.stakeId);
-            console.debug(
-              `Comparing parsedStakeId=${parsedStakeId} to wantedStakeId=${wantedStakeId}`
-            );
-            if (parsedStakeId === wantedStakeId) {
-              found = parsed.args.amount?.toString?.() ?? null;
-              foundBlockNumber = log.blockNumber;
-              console.debug(
-                `Found withdrawn amount for stakeId ${wantedStakeId}:`,
-                found,
-                "blockNumber:",
-                foundBlockNumber
-              );
-              break;
+            let found = null;
+            let foundBlockNumber = null;
+            for (const log of allLogs) {
+              let parsed;
+              try {
+                parsed = iface.parseLog({
+                  topics: log.topics,
+                  data: log.data,
+                });
+              } catch (parseErr) {
+                console.error("Error parsing log from BscScan:", parseErr, log);
+                continue;
+              }
+              const parsedStakeId =
+                parsed.args.stakeId?.toString?.() ??
+                String(parsed.args.stakeId);
+              const wantedStakeId =
+                w.stakeId?.toString?.() ?? String(w.stakeId);
+              if (parsedStakeId === wantedStakeId) {
+                found = parsed.args.amount?.toString?.() ?? null;
+                foundBlockNumber = log.blockNumber;
+                break;
+              }
+            }
+            if (found) {
+              logsByStakeId[w.stakeId] = {
+                amount: found,
+                blockNumber: foundBlockNumber,
+              };
             }
           }
-          if (found) {
-            logsByStakeId[w.stakeId] = {
-              amount: found,
-              blockNumber: foundBlockNumber,
-            };
+          const blockNumbers = Object.values(logsByStakeId)
+            .map((obj) => obj.blockNumber)
+            .filter(Boolean);
+          const uniqueBlockNumbers = [...new Set(blockNumbers)];
+          const blockTimestamps = {};
+          for (const bn of uniqueBlockNumbers) {
+            try {
+              const block = await provider.getBlock(Number(bn));
+              blockTimestamps[bn] = block.timestamp;
+            } catch (err) {
+              console.error("Error fetching block for timestamp:", bn, err);
+            }
           }
-        }
-        // Fetch timestamps for each blockNumber
-        const blockNumbers = Object.values(logsByStakeId)
-          .map((obj) => obj.blockNumber)
-          .filter(Boolean);
-        const uniqueBlockNumbers = [...new Set(blockNumbers)];
-        const blockTimestamps = {};
-        for (const bn of uniqueBlockNumbers) {
-          try {
-            const block = await provider.getBlock(Number(bn));
-            blockTimestamps[bn] = block.timestamp;
-          } catch (err) {
-            console.error("Error fetching block for timestamp:", bn, err);
+          for (const stakeId in logsByStakeId) {
+            const obj = logsByStakeId[stakeId];
+            if (obj && obj.blockNumber && blockTimestamps[obj.blockNumber]) {
+              obj.timestamp = blockTimestamps[obj.blockNumber];
+            }
           }
+          setWithdrawnAmountsByStakeId(logsByStakeId);
+        } catch (err) {
+          setWithdrawnAmountsByStakeId({});
+          console.error("Error fetching or parsing StakeWithdrawn logs:", err);
         }
-        // Add timestamp to each entry
-        for (const stakeId in logsByStakeId) {
-          const obj = logsByStakeId[stakeId];
-          if (obj && obj.blockNumber && blockTimestamps[obj.blockNumber]) {
-            obj.timestamp = blockTimestamps[obj.blockNumber];
-          }
-        }
-        console.debug("logsByStakeId mapping with timestamps:", logsByStakeId);
-        setWithdrawnAmountsByStakeId(logsByStakeId);
-      } catch (err) {
-        setWithdrawnAmountsByStakeId({});
-        console.error("Error fetching or parsing StakeWithdrawn logs:", err);
-      }
+      };
+      fetchLogs();
     }
-    fetchWithdrawnLogs();
-  }, [address, network, withdrawals]);
+  }, [withdrawals, address, network]);
 
   const updateChain = (chain) => {
     setNetwork(chain);
