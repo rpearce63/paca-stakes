@@ -61,6 +61,8 @@ export default function StakeViewer() {
   } = useData();
   const [address, setAddress] = useState("");
   const [addressList, setAddressList] = useState([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isAddressListLoaded, setIsAddressListLoaded] = useState(false);
   const [stakes, setStakes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -109,18 +111,28 @@ export default function StakeViewer() {
 
   // Load address list and address from localStorage on mount
   useEffect(() => {
-    const savedAddress = localStorage.getItem("paca_stakes_address");
-    if (savedAddress) {
-      setAddress(savedAddress);
-    }
-    const savedList = localStorage.getItem("paca_stakes_address_list");
-    if (savedList) {
+    let savedAddress = localStorage.getItem("paca_stakes_address");
+    const savedListJSON = localStorage.getItem("paca_stakes_address_list");
+    let savedList = [];
+
+    if (savedListJSON) {
       try {
-        setAddressList(JSON.parse(savedList));
+        savedList = JSON.parse(savedListJSON);
+        setAddressList(savedList);
       } catch {
         setAddressList([]);
       }
     }
+
+    // If no address is selected but a list exists, select the first one.
+    if (!savedAddress && savedList.length > 0) {
+      savedAddress = savedList[0];
+    }
+
+    if (savedAddress) {
+      setAddress(savedAddress);
+    }
+    setIsAddressListLoaded(true); // Signal that the list has been loaded
   }, []);
 
   // Save address to localStorage whenever it changes, and update address list
@@ -392,20 +404,38 @@ export default function StakeViewer() {
     }
   }, []);
 
-  // Only fetch all chains when address changes
+  // Fetch all chains when address changes, but only after initial load.
   useEffect(() => {
+    if (!isAddressListLoaded) return; // Wait until address list is loaded
+
     if (address) {
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+      }
       fetchAllChains();
       startPolling();
     } else {
       stopPolling();
+      if (!isInitialLoad) {
+        setStakes([]);
+        setChainTotals({});
+      }
     }
 
     // Cleanup polling on unmount or address change
     return () => {
       stopPolling();
     };
-  }, [address, fetchAllChains, startPolling, stopPolling]);
+  }, [
+    address,
+    isAddressListLoaded,
+    isInitialLoad,
+    fetchAllChains,
+    startPolling,
+    stopPolling,
+    setStakes,
+    setChainTotals,
+  ]);
 
   // Always set stakes from cache for the selected network on mount or when network/cache changes
   useEffect(() => {
@@ -443,57 +473,59 @@ export default function StakeViewer() {
           const provider = new ethers.JsonRpcProvider(NETWORKS[network].rpc);
           const iface = new Interface(NETWORKS[network].abi);
           const eventTopic = iface.getEvent("StakeWithdrawn").topicHash;
-          const logsByStakeId = {};
+          const userTopic = zeroPadValue(getAddress(address), 32);
+          const topics = [eventTopic, userTopic];
           const latestBlock = await provider.getBlockNumber();
           const fromBlock = 0;
-          for (const w of completed) {
-            const userTopic = zeroPadValue(getAddress(address), 32);
-            const topics = [eventTopic, userTopic];
-            let allLogs = [];
-            try {
-              allLogs = await fetchLogsFromBscScan({
-                address: NETWORKS[network].contract,
-                topics,
-                fromBlock,
-                toBlock: latestBlock,
-              });
-            } catch (apiErr) {
-              console.error(
-                "BscScan API error for withdrawal",
-                w.stakeId,
-                ":",
-                apiErr
-              );
-              continue;
-            }
-            let found = null;
-            let foundBlockNumber = null;
-            for (const log of allLogs) {
-              let parsed;
+          let allLogs = [];
+
+          try {
+            allLogs = await fetchLogsFromBscScan({
+              address: NETWORKS[network].contract,
+              topics,
+              fromBlock,
+              toBlock: latestBlock,
+            });
+          } catch (apiErr) {
+            console.error(
+              "BscScan API error fetching all withdrawal logs:",
+              apiErr
+            );
+            setWithdrawnAmountsByStakeId({});
+            return; // Exit if we can't get logs
+          }
+
+          const parsedLogs = allLogs
+            .map((log) => {
               try {
-                parsed = iface.parseLog({
+                const parsed = iface.parseLog({
                   topics: log.topics,
                   data: log.data,
                 });
+                return {
+                  ...parsed,
+                  blockNumber: log.blockNumber,
+                };
               } catch (parseErr) {
                 console.error("Error parsing log from BscScan:", parseErr, log);
-                continue;
+                return null;
               }
-              const parsedStakeId =
-                parsed.args.stakeId?.toString?.() ??
-                String(parsed.args.stakeId);
-              const wantedStakeId =
-                w.stakeId?.toString?.() ?? String(w.stakeId);
-              if (parsedStakeId === wantedStakeId) {
-                found = parsed.args.amount?.toString?.() ?? null;
-                foundBlockNumber = log.blockNumber;
-                break;
-              }
-            }
-            if (found) {
+            })
+            .filter(Boolean);
+
+          const logsByStakeId = {};
+          for (const w of completed) {
+            const wantedStakeId = w.stakeId?.toString?.() ?? String(w.stakeId);
+            const foundLog = parsedLogs.find(
+              (log) =>
+                (log.args.stakeId?.toString?.() ?? String(log.args.stakeId)) ===
+                wantedStakeId
+            );
+
+            if (foundLog) {
               logsByStakeId[w.stakeId] = {
-                amount: found,
-                blockNumber: foundBlockNumber,
+                amount: foundLog.args.amount?.toString?.() ?? null,
+                blockNumber: foundLog.blockNumber,
               };
             }
           }
@@ -680,6 +712,10 @@ export default function StakeViewer() {
           "paca_stakes_address_list",
           JSON.stringify(merged)
         );
+        // If no address is currently selected, select the first one from the imported list.
+        if (!address && merged.length > 0) {
+          setAddress(merged[0]);
+        }
       } catch {
         alert("Failed to import addresses. Please select a valid JSON file.");
       }
@@ -690,7 +726,7 @@ export default function StakeViewer() {
   };
 
   return (
-    <div className="relative w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-gray-50 dark:bg-gray-800 shadow rounded flex flex-col overflow-hidden">
+    <div className="relative w-full max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-gray-50 dark:bg-gray-800 shadow rounded flex flex-col">
       <div className="relative z-10">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-center">
@@ -733,11 +769,10 @@ export default function StakeViewer() {
               value={address}
               onChange={(e) => {
                 setAddress(e.target.value);
-                setShowDropdown(false); // close dropdown on manual input
+                // Do NOT close the dropdown here!
               }}
               onFocus={() => {
-                if (addressList.length > 0 && address !== "")
-                  setShowDropdown(true);
+                if (addressList.length > 0) setShowDropdown(true);
               }}
               className={`border p-2 w-full rounded shadow-sm text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none ${
                 error
@@ -746,14 +781,10 @@ export default function StakeViewer() {
               }`}
               autoComplete="off"
               onPaste={(e) => {
-                // Ensure pasted value replaces the input
                 e.preventDefault();
                 const pasted = e.clipboardData.getData("text");
                 setAddress(pasted);
                 setShowDropdown(false);
-                setTimeout(() => {
-                  if (inputRef.current) inputRef.current.select();
-                }, 0);
               }}
             />
             {addressList.length > 0 && (
@@ -770,7 +801,8 @@ export default function StakeViewer() {
             {showDropdown && addressList.length > 0 && (
               <ul
                 ref={dropdownRef}
-                className="absolute z-10 left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow max-h-64 overflow-auto text-base"
+                className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow max-h-[calc(100vh-100px)] overflow-y-auto text-base"
+                style={{ maxHeight: "calc(100vh - 100px)", overflowY: "auto" }}
               >
                 <li
                   className="px-3 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-600 font-semibold text-blue-700 dark:text-blue-400 border-b border-gray-200 dark:border-gray-600"
@@ -788,6 +820,7 @@ export default function StakeViewer() {
                 >
                   + Add new address…
                 </li>
+                {/* Always show all addresses in the dropdown */}
                 {addressList.map((addr) => (
                   <li
                     key={addr}
