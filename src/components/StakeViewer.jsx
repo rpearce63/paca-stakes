@@ -7,6 +7,7 @@ import ChainSummaryTable from "./ChainSummaryTable";
 import StakesTable from "./StakesTable";
 import MultiWalletSummary from "./MultiWalletSummary";
 import WithdrawalsTable from "./WithdrawalsTable";
+import StakeCalculator from "./StakeCalculator";
 import { Interface } from "ethers";
 import { zeroPadValue, getAddress } from "ethers";
 import { useData } from "../contexts/DataContext";
@@ -72,6 +73,7 @@ export default function StakeViewer() {
   });
   const [hideCompleted, setHideCompleted] = useState(true);
   const [viewMode, setViewMode] = useState("single");
+  const [showCalculator, setShowCalculator] = useState(false);
   const networkRef = useRef(network);
   const pollingIntervalRef = useRef(null);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -760,6 +762,13 @@ export default function StakeViewer() {
                 style={{ display: "none" }}
               />
             </label>
+            <button
+              type="button"
+              className="px-3 py-1 rounded bg-blue-200 dark:bg-blue-700 text-blue-700 dark:text-blue-200 hover:bg-blue-300 dark:hover:bg-blue-600 text-sm"
+              onClick={() => setShowCalculator(true)}
+            >
+              Calculator
+            </button>
           </div>
           <div className="relative w-full flex flex-row gap-2">
             <input
@@ -1029,6 +1038,12 @@ export default function StakeViewer() {
           </>
         )}
       </div>
+
+      {/* Stake Calculator Modal */}
+      <StakeCalculator
+        isOpen={showCalculator}
+        onClose={() => setShowCalculator(false)}
+      />
     </div>
   );
 }
