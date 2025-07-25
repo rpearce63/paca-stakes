@@ -163,7 +163,7 @@ export default function StakeCalculator({ isOpen, onClose }) {
             </div>
 
             {/* Restaking Toggle - only show when compounding is enabled */}
-            {useCompounding && (
+            {useCompounding && stakeDuration === 365 && (
               <div className="flex items-center">
                 <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
                   <input
