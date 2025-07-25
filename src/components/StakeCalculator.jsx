@@ -11,6 +11,7 @@ export default function StakeCalculator({ isOpen, onClose }) {
   const [dailyRate, setDailyRate] = useState("0.33");
   const [stakeDuration, setStakeDuration] = useState(250);
   const [useCompounding, setUseCompounding] = useState(false);
+  const [enableRestaking, setEnableRestaking] = useState(false);
   const [results, setResults] = useState(null);
   const modalRef = useRef(null);
 
@@ -57,7 +58,12 @@ export default function StakeCalculator({ isOpen, onClose }) {
 
       if (amount > 0 && rate > 0 && days > 0) {
         if (useCompounding) {
-          const compoundResults = calculateCompoundStake(amount, rate, days);
+          const compoundResults = calculateCompoundStake(
+            amount,
+            rate,
+            days,
+            enableRestaking
+          );
           setResults(compoundResults);
         } else {
           const simpleResults = calculateSimpleStake(amount, rate, days);
@@ -69,7 +75,7 @@ export default function StakeCalculator({ isOpen, onClose }) {
     } else {
       setResults(null);
     }
-  }, [stakeAmount, dailyRate, stakeDuration, useCompounding]);
+  }, [stakeAmount, dailyRate, stakeDuration, useCompounding, enableRestaking]);
 
   if (!isOpen) return null;
 
@@ -155,6 +161,21 @@ export default function StakeCalculator({ isOpen, onClose }) {
                 Daily Compounding
               </label>
             </div>
+
+            {/* Restaking Toggle - only show when compounding is enabled */}
+            {useCompounding && (
+              <div className="flex items-center">
+                <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={enableRestaking}
+                    onChange={(e) => setEnableRestaking(e.target.checked)}
+                    className="mr-2 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  />
+                  Restake Expired Stakes (0.37% bonus rate)
+                </label>
+              </div>
+            )}
           </div>
 
           {/* Results */}
@@ -194,13 +215,13 @@ export default function StakeCalculator({ isOpen, onClose }) {
 
                 <div className="bg-white dark:bg-gray-600 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                    Daily Return
+                    Final Daily Return
                   </h4>
                   <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(
-                      results.dailyReturn ||
-                        (parseFloat(stakeAmount) * parseFloat(dailyRate)) / 100
-                    )}
+                    {formatCurrency(results.dailyReturn)}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Avg: {formatCurrency(results.averageDailyReturn)}/day
                   </p>
                 </div>
               </div>
@@ -242,12 +263,22 @@ export default function StakeCalculator({ isOpen, onClose }) {
                       </div>
                       <div>
                         <span className="text-gray-500 dark:text-gray-400">
-                          Daily Rate:{" "}
+                          Average Daily Rate:{" "}
                         </span>
                         <span className="font-semibold text-gray-900 dark:text-white">
-                          {formatPercentage(parseFloat(dailyRate))}
+                          {formatPercentage(results.averageDailyRate)}
                         </span>
                       </div>
+                      {enableRestaking && (
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Final Expired Compound Stakes:{" "}
+                          </span>
+                          <span className="font-semibold text-gray-900 dark:text-white">
+                            {results.finalExpiredCompoundStakes}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -298,9 +329,19 @@ export default function StakeCalculator({ isOpen, onClose }) {
               <strong>Simple Interest:</strong> Daily rewards are calculated but
               not reinvested.
             </p>
-            <p>
+            <p className="mb-2">
               <strong>Daily Compounding:</strong> Daily rewards are
-              automatically reinvested as new stakes at the same rate.
+              automatically reinvested as new stakes at 0.33% daily rate for 250
+              days.
+            </p>
+            <p className="mb-2">
+              <strong>Restaking:</strong> When enabled, expired compound stakes
+              (created from daily rewards) are automatically restaked at 0.37%
+              daily rate for 250 days. The initial stake is not restaked.
+            </p>
+            <p className="text-xs">
+              Note: New stakes created from compounding always use 0.33% daily
+              rate and 250-day duration, regardless of your input values.
             </p>
           </div>
         </div>
