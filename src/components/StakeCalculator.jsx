@@ -215,14 +215,16 @@ export default function StakeCalculator({ isOpen, onClose }) {
 
                 <div className="bg-white dark:bg-gray-600 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                    Final Daily Return
+                    {useCompounding ? "Final Daily Return" : "Daily Return"}
                   </h4>
                   <p className="text-lg font-semibold text-gray-900 dark:text-white">
                     {formatCurrency(results.dailyReturn)}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Avg: {formatCurrency(results.averageDailyReturn)}/day
-                  </p>
+                  {useCompounding && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Avg: {formatCurrency(results.averageDailyReturn)}/day
+                    </p>
+                  )}
                 </div>
               </div>
 
