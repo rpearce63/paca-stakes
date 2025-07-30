@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   calculateSimpleStake,
   calculateCompoundStake,
+  calculateStrategyStake,
   formatCurrency,
   formatPercentage,
 } from "../utils/stakeCalculator";
@@ -10,7 +11,7 @@ export default function StakeCalculator({ isOpen, onClose }) {
   const [stakeAmount, setStakeAmount] = useState("");
   const [dailyRate, setDailyRate] = useState("0.33");
   const [stakeDuration, setStakeDuration] = useState(250);
-  const [useCompounding, setUseCompounding] = useState(false);
+  const [compoundingStrategy, setCompoundingStrategy] = useState("none");
   const [enableRestaking, setEnableRestaking] = useState(false);
   const [results, setResults] = useState(null);
   const modalRef = useRef(null);
@@ -57,7 +58,10 @@ export default function StakeCalculator({ isOpen, onClose }) {
       const days = parseInt(stakeDuration);
 
       if (amount > 0 && rate > 0 && days > 0) {
-        if (useCompounding) {
+        if (compoundingStrategy === "none") {
+          const simpleResults = calculateSimpleStake(amount, rate, days);
+          setResults(simpleResults);
+        } else if (compoundingStrategy === "daily") {
           const compoundResults = calculateCompoundStake(
             amount,
             rate,
@@ -66,8 +70,15 @@ export default function StakeCalculator({ isOpen, onClose }) {
           );
           setResults(compoundResults);
         } else {
-          const simpleResults = calculateSimpleStake(amount, rate, days);
-          setResults(simpleResults);
+          // Use strategy-based calculation
+          const strategyResults = calculateStrategyStake(
+            amount,
+            rate,
+            days,
+            compoundingStrategy,
+            enableRestaking
+          );
+          setResults(strategyResults);
         }
       } else {
         setResults(null);
@@ -75,7 +86,7 @@ export default function StakeCalculator({ isOpen, onClose }) {
     } else {
       setResults(null);
     }
-  }, [stakeAmount, dailyRate, stakeDuration, useCompounding, enableRestaking]);
+  }, [stakeAmount, dailyRate, stakeDuration, compoundingStrategy, enableRestaking]);
 
   if (!isOpen) return null;
 
@@ -149,21 +160,26 @@ export default function StakeCalculator({ isOpen, onClose }) {
               </select>
             </div>
 
-            {/* Compounding Toggle */}
-            <div className="flex items-center">
-              <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={useCompounding}
-                  onChange={(e) => setUseCompounding(e.target.checked)}
-                  className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                Daily Compounding
+            {/* Compounding Strategy */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Compounding Strategy
               </label>
+              <select
+                value={compoundingStrategy}
+                onChange={(e) => setCompoundingStrategy(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="none">Simple Interest (No Compounding)</option>
+                <option value="daily">Daily Compounding</option>
+                <option value="4-3">4/3 Strategy (4 days compound, 3 days claim)</option>
+                <option value="5-2">5/2 Strategy (5 days compound, 2 days claim)</option>
+                <option value="alternate">Alternate Strategy (Compound, Claim, Compound, Claim...)</option>
+              </select>
             </div>
 
             {/* Restaking Toggle - only show when compounding is enabled */}
-            {useCompounding && stakeDuration === 365 && (
+            {compoundingStrategy !== "none" && stakeDuration === 365 && (
               <div className="flex items-center">
                 <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
                   <input
@@ -197,7 +213,7 @@ export default function StakeCalculator({ isOpen, onClose }) {
 
                 <div className="bg-white dark:bg-gray-600 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                    Total Return
+                    Total Rewards
                   </h4>
                   <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                     {formatCurrency(results.totalReturn)}
@@ -206,44 +222,33 @@ export default function StakeCalculator({ isOpen, onClose }) {
 
                 <div className="bg-white dark:bg-gray-600 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                    Final Value
+                    {compoundingStrategy === "none" ? "Final Value" : "Total Staked"}
                   </h4>
                   <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                     {formatCurrency(results.totalValue)}
                   </p>
                 </div>
 
-                <div className="bg-white dark:bg-gray-600 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                    {useCompounding ? "Final Daily Return" : "Daily Return"}
-                  </h4>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(results.dailyReturn)}
-                  </p>
-                  {useCompounding && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Avg: {formatCurrency(results.averageDailyReturn)}/day
+                {compoundingStrategy !== "none" && compoundingStrategy !== "daily" && (
+                  <div className="bg-white dark:bg-gray-600 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                      Total Compounded
+                    </h4>
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {formatCurrency(results.totalCompoundedAmount || 0)}
                     </p>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Compound-specific results */}
-              {useCompounding && results.stakeHistory && (
+              {compoundingStrategy !== "none" && results.stakeHistory && (
                 <div className="mt-6">
                   <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-3">
                     Compounding Details
                   </h4>
                   <div className="bg-white dark:bg-gray-600 rounded-lg p-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-500 dark:text-gray-400">
-                          Total Staked Value:{" "}
-                        </span>
-                        <span className="font-semibold text-gray-900 dark:text-white">
-                          {formatCurrency(results.totalStakedValue)}
-                        </span>
-                      </div>
                       <div>
                         <span className="text-gray-500 dark:text-gray-400">
                           Final Active Stakes:{" "}
@@ -271,6 +276,22 @@ export default function StakeCalculator({ isOpen, onClose }) {
                           {formatPercentage(results.averageDailyRate)}
                         </span>
                       </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Final Daily Return:{" "}
+                        </span>
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {formatCurrency(results.dailyReturn)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Average Daily Return:{" "}
+                        </span>
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {formatCurrency(results.averageDailyReturn)}/day
+                        </span>
+                      </div>
                       {enableRestaking && (
                         <div>
                           <span className="text-gray-500 dark:text-gray-400">
@@ -281,13 +302,45 @@ export default function StakeCalculator({ isOpen, onClose }) {
                           </span>
                         </div>
                       )}
+                      {/* Show claimed amounts for strategy-based compounding */}
+                      {compoundingStrategy !== "daily" && results.totalClaimed > 0 && (
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            Total Claimed:{" "}
+                          </span>
+                          <span className="font-semibold text-blue-600 dark:text-blue-400">
+                            {formatCurrency(results.totalClaimed)}
+                          </span>
+                        </div>
+                      )}
+                      {/* Show compound and claim counts for strategy-based compounding */}
+                      {compoundingStrategy !== "none" && compoundingStrategy !== "daily" && (
+                        <>
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-400">
+                              Total Compounds:{" "}
+                            </span>
+                            <span className="font-semibold text-green-600 dark:text-green-400">
+                              {results.totalCompounds || 0}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500 dark:text-gray-400">
+                              Total Claims:{" "}
+                            </span>
+                            <span className="font-semibold text-orange-600 dark:text-orange-400">
+                              {results.totalClaims || 0}
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Simple interest results */}
-              {!useCompounding && (
+              {compoundingStrategy === "none" && (
                 <div className="mt-6">
                   <div className="bg-white dark:bg-gray-600 rounded-lg p-4">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
@@ -327,20 +380,46 @@ export default function StakeCalculator({ isOpen, onClose }) {
 
           {/* Info Text */}
           <div className="mt-6 text-sm text-gray-600 dark:text-gray-400">
-            <p className="mb-2">
-              <strong>Simple Interest:</strong> Daily rewards are calculated but
-              not reinvested.
-            </p>
-            <p className="mb-2">
-              <strong>Daily Compounding:</strong> Daily rewards are
-              automatically reinvested as new stakes at 0.33% daily rate for 250
-              days.
-            </p>
-            <p className="mb-2">
-              <strong>Restaking:</strong> When enabled, expired compound stakes
-              (created from daily rewards) are automatically restaked at 0.37%
-              daily rate for 250 days. The initial stake is not restaked.
-            </p>
+            {compoundingStrategy === "none" && (
+              <p className="mb-2">
+                <strong>Simple Interest:</strong> Daily rewards are calculated but
+                not reinvested.
+              </p>
+            )}
+            {compoundingStrategy === "daily" && (
+              <p className="mb-2">
+                <strong>Daily Compounding:</strong> Daily rewards are
+                automatically reinvested as new stakes at 0.33% daily rate for 250
+                days.
+              </p>
+            )}
+            {compoundingStrategy === "4-3" && (
+              <p className="mb-2">
+                <strong>4/3 Strategy:</strong> Compound rewards 4 times, then claim 3 times, repeating this cycle. Each compound/claim only occurs when minimum thresholds are met. This strategy balances growth with regular income. Claimed amounts are shown separately.
+              </p>
+            )}
+            {compoundingStrategy === "5-2" && (
+              <p className="mb-2">
+                <strong>5/2 Strategy:</strong> Compound rewards 5 times, then claim 2 times, repeating this cycle. Each compound/claim only occurs when minimum thresholds are met. This strategy prioritizes growth while still providing regular income. Claimed amounts are shown separately.
+              </p>
+            )}
+            {compoundingStrategy === "alternate" && (
+              <p className="mb-2">
+                <strong>Alternate Strategy:</strong> Alternate between compounding and claiming rewards. Each compound/claim only occurs when minimum thresholds are met. This provides a mix of growth and regular income. Claimed amounts are shown separately.
+              </p>
+            )}
+            {(compoundingStrategy === "4-3" || compoundingStrategy === "5-2" || compoundingStrategy === "alternate") && (
+              <p className="mb-2">
+                <strong>Minimum Thresholds:</strong> Compounding requires at least $20 in accumulated rewards, and claiming requires at least $25. Rewards accumulate until thresholds are met, maintaining the strategy pattern regardless of timing.
+              </p>
+            )}
+            {compoundingStrategy !== "none" && (
+              <p className="mb-2">
+                <strong>Restaking:</strong> When enabled, expired compound stakes
+                (created from daily rewards) are automatically restaked at 0.37%
+                daily rate for 250 days. The initial stake is not restaked.
+              </p>
+            )}
             <p className="text-xs">
               Note: New stakes created from compounding always use 0.33% daily
               rate and 250-day duration, regardless of your input values.
