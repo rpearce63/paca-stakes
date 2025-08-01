@@ -228,7 +228,7 @@ export default function Marketplace() {
   }, [stakes, selectedChain, rowsPerPage]);
 
   return (
-    <div className="relative w-full min-h-screen max-w-6xl mx-auto p-2 sm:p-4 md:p-6 bg-gray-50 dark:bg-gray-800 shadow rounded flex flex-col overflow-hidden">
+    <div className="relative w-full min-h-screen max-w-7xl mx-auto p-2 sm:p-4 md:p-6 bg-gray-50 dark:bg-gray-800 shadow rounded flex flex-col overflow-hidden">
       <div className="relative z-10">
         <MarketplaceSummary
           allStakesByChain={allStakesByChain}
