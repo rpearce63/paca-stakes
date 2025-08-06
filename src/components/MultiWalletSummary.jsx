@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
 import { NETWORKS } from "../constants/networks";
 import { formatCurrency } from "../utils/formatters";
-import { sortData, getSortIcon } from "../utils/sorting";
+import { sortData, getSortIconUnicode } from "../utils/sorting";
 
 const MultiWalletSummary = ({
   addressList,
@@ -382,7 +382,7 @@ const MultiWalletSummary = ({
                 >
                   <div className="flex items-center">
                     Address
-                    {getSortIcon(sortConfig, "address")}
+                    {getSortIconUnicode(sortConfig, "address")}
                   </div>
                 </th>
                 <th
@@ -391,7 +391,7 @@ const MultiWalletSummary = ({
                 >
                   <div className="flex items-center justify-end">
                     Total Staked
-                    {getSortIcon(sortConfig, "totalStaked")}
+                    {getSortIconUnicode(sortConfig, "totalStaked")}
                   </div>
                 </th>
                 <th
@@ -400,7 +400,7 @@ const MultiWalletSummary = ({
                 >
                   <div className="flex items-center justify-end">
                     Claimable Funds
-                    {getSortIcon(sortConfig, "rewards")}
+                    {getSortIconUnicode(sortConfig, "rewards")}
                   </div>
                 </th>
                 <th
@@ -409,7 +409,7 @@ const MultiWalletSummary = ({
                 >
                   <div className="flex items-center justify-end">
                     Daily Earnings
-                    {getSortIcon(sortConfig, "dailyEarnings")}
+                    {getSortIconUnicode(sortConfig, "dailyEarnings")}
                   </div>
                 </th>
                 <th
@@ -417,7 +417,7 @@ const MultiWalletSummary = ({
                   onClick={() => requestSort("dailyAPR")}
                 >
                   <div className="flex items-center justify-end">
-                    Daily %{getSortIcon(sortConfig, "dailyAPR")}
+                    Daily %{getSortIconUnicode(sortConfig, "dailyAPR")}
                   </div>
                 </th>
                 <th
@@ -425,7 +425,7 @@ const MultiWalletSummary = ({
                   onClick={() => requestSort("annualAPR")}
                 >
                   <div className="flex items-center justify-end">
-                    Annual %{getSortIcon(sortConfig, "annualAPR")}
+                    Annual %{getSortIconUnicode(sortConfig, "annualAPR")}
                   </div>
                 </th>
                 <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-center font-semibold dark:text-white">

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { NETWORKS } from "../constants/networks";
 import { ethers } from "ethers";
 import { formatCurrency } from "../utils/formatters";
+import { getSortIconUnicode } from "../utils/sorting";
 
 // Mobile popup component for stake details
 function MobileStakePopup({ stake, chainId, onClose, originRect }) {
@@ -262,7 +263,7 @@ function MobileStakePopup({ stake, chainId, onClose, originRect }) {
   );
 }
 
-export default function MarketplaceTable({ chainId, stakes }) {
+export default function MarketplaceTable({ chainId, stakes, sortConfig, onSort }) {
   const [selectedStake, setSelectedStake] = useState(null);
   const [popupOrigin, setPopupOrigin] = useState(null); // {top, left, width, height}
   const decimals = NETWORKS[chainId].decimals;
@@ -287,6 +288,15 @@ export default function MarketplaceTable({ chainId, stakes }) {
     return addr.slice(0, 6) + "..." + addr.slice(-4);
   };
 
+  // Handle column sorting
+  const handleSort = (key) => {
+    if (sortConfig.key === key) {
+      onSort({ key, direction: sortConfig.direction === "asc" ? "desc" : "asc" });
+    } else {
+      onSort({ key, direction: "asc" });
+    }
+  };
+
   const handleRowClick = (stake, e) => {
     if (window.innerWidth < 768) {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -302,9 +312,14 @@ export default function MarketplaceTable({ chainId, stakes }) {
 
   return (
     <div className="mb-6">
-      <h2 className="text-xl font-semibold mb-4 dark:text-white">
-        Marketplace Stakes ({NETWORKS[chainId].name})
-      </h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold dark:text-white">
+          Marketplace Stakes ({NETWORKS[chainId].name})
+        </h2>
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          Click column headers to sort
+        </div>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow">
           <thead>
@@ -312,30 +327,65 @@ export default function MarketplaceTable({ chainId, stakes }) {
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold sm:table-cell hidden dark:text-white">
                 Chain
               </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-1 py-2 text-left font-semibold dark:text-white w-16">
-                Stake ID
+              <th 
+                className={`border border-gray-300 dark:border-gray-600 px-1 py-2 text-left font-semibold dark:text-white w-16 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                  sortConfig.key === "stakeId" ? "bg-blue-100 dark:bg-blue-900/40" : ""
+                }`}
+                onClick={() => handleSort("stakeId")}
+              >
+                Stake ID {getSortIconUnicode(sortConfig, "stakeId")}
               </th>
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left font-semibold sm:table-cell hidden dark:text-white">
                 Seller
               </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
-                Price
+              <th 
+                className={`border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                  sortConfig.key === "price" ? "bg-blue-100 dark:bg-blue-900/40" : ""
+                }`}
+                onClick={() => handleSort("price")}
+              >
+                Price {getSortIconUnicode(sortConfig, "price")}
               </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white">
-                Stake Value
+              <th 
+                className={`border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                  sortConfig.key === "amount" ? "bg-blue-100 dark:bg-blue-900/40" : ""
+                }`}
+                onClick={() => handleSort("amount")}
+              >
+                Stake Value {getSortIconUnicode(sortConfig, "amount")}
               </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white">
-                Daily Reward Rate
+              <th 
+                className={`border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                  sortConfig.key === "dailyRewardRate" ? "bg-blue-100 dark:bg-blue-900/40" : ""
+                }`}
+                onClick={() => handleSort("dailyRewardRate")}
+              >
+                Daily Reward Rate {getSortIconUnicode(sortConfig, "dailyRewardRate")}
               </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white">
-                Bonus Amount
+              <th 
+                className={`border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                  sortConfig.key === "bonusAmount" ? "bg-blue-100 dark:bg-blue-900/40" : ""
+                }`}
+                onClick={() => handleSort("bonusAmount")}
+              >
+                Bonus Amount {getSortIconUnicode(sortConfig, "bonusAmount")}
               </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
-                Buyer Receives
+              <th 
+                className={`border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                  sortConfig.key === "buyerReceives" ? "bg-blue-100 dark:bg-blue-900/40" : ""
+                }`}
+                onClick={() => handleSort("buyerReceives")}
+              >
+                Buyer Receives {getSortIconUnicode(sortConfig, "buyerReceives")}
               </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
+              <th 
+                className={`border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                  sortConfig.key === "effectiveDailyRate" ? "bg-blue-100 dark:bg-blue-900/40" : ""
+                }`}
+                onClick={() => handleSort("effectiveDailyRate")}
+              >
                 <span className="relative group cursor-help">
-                  Effective Daily Rate
+                  Effective Daily Rate {getSortIconUnicode(sortConfig, "effectiveDailyRate")}
                   <span className="absolute left-1/2 -translate-x-1/2 mt-2 w-64 z-20 hidden group-hover:block bg-gray-900 text-white text-xs rounded p-2 shadow-lg border border-gray-700 whitespace-normal">
                     Based on the net stake amount (Stake Value + Bonus) the
                     buyer receives. Does <b>not</b> include pending rewards,
@@ -343,11 +393,21 @@ export default function MarketplaceTable({ chainId, stakes }) {
                   </span>
                 </span>
               </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white">
-                Daily Rewards
+              <th 
+                className={`border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                  sortConfig.key === "dailyRewards" ? "bg-blue-100 dark:bg-blue-900/40" : ""
+                }`}
+                onClick={() => handleSort("dailyRewards")}
+              >
+                Daily Rewards {getSortIconUnicode(sortConfig, "dailyRewards")}
               </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white">
-                Pending Rewards
+              <th 
+                className={`border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                  sortConfig.key === "pendingRewards" ? "bg-blue-100 dark:bg-blue-900/40" : ""
+                }`}
+                onClick={() => handleSort("pendingRewards")}
+              >
+                Pending Rewards {getSortIconUnicode(sortConfig, "pendingRewards")}
               </th>
             </tr>
           </thead>

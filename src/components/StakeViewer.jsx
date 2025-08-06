@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ethers } from "ethers";
 import { NETWORKS } from "../constants/networks";
-import { sortData, getSortIcon } from "../utils/sorting";
+import { sortData, getSortIconUnicode } from "../utils/sorting";
 import NetworkSelector from "./NetworkSelector";
 import ChainSummaryTable from "./ChainSummaryTable";
 import StakesTable from "./StakesTable";
@@ -965,7 +965,7 @@ export default function StakeViewer() {
                       hideCompleted={hideCompleted}
                       setHideCompleted={setHideCompleted}
                       requestSort={requestSort}
-                      getSortIcon={(key) => getSortIcon(sortConfig, key)}
+                      getSortIcon={(key) => getSortIconUnicode(sortConfig, key)}
                     />
                   </div>
                 )}

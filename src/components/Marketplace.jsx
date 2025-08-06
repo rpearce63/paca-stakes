@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import { NETWORKS } from "../constants/networks";
 import MarketplaceTable from "./MarketplaceTable";
 import { formatCurrency } from "../utils/formatters";
+import { sortData } from "../utils/sorting";
 
 function MarketplaceSummary({
   allStakesByChain,
@@ -115,6 +116,7 @@ export default function Marketplace() {
   const [allStakesByChain, setAllStakesByChain] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [sortConfig, setSortConfig] = useState({ key: "price", direction: "asc" });
 
   useEffect(() => {
     let cancelled = false;
@@ -246,7 +248,12 @@ export default function Marketplace() {
           </div>
         ) : (
           <div className="overflow-x-auto bg-white/90 dark:bg-gray-800 rounded-lg shadow-lg border border-blue-200 p-4">
-            <MarketplaceTable chainId={selectedChain} stakes={stakes} />
+            <MarketplaceTable 
+              chainId={selectedChain} 
+              stakes={sortData(stakes, sortConfig, NETWORKS[selectedChain].decimals)} 
+              sortConfig={sortConfig}
+              onSort={setSortConfig}
+            />
           </div>
         )}
         {/* Pagination controls */}
