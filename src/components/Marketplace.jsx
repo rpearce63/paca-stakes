@@ -112,11 +112,12 @@ export default function Marketplace() {
   const [stakes, setStakes] = useState([]);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
-  const totalPages = Math.max(1, Math.ceil(stakes.length / rowsPerPage));
   const [allStakesByChain, setAllStakesByChain] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: "price", direction: "asc" });
+  const [walletAddress, setWalletAddress] = useState("");
+  const [addressList, setAddressList] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -224,10 +225,39 @@ export default function Marketplace() {
     };
   }, [selectedChain]);
 
+  // Load address list from localStorage on mount
+  useEffect(() => {
+    const savedListJSON = localStorage.getItem("paca_stakes_address_list");
+    let savedList = [];
+
+    if (savedListJSON) {
+      try {
+        savedList = JSON.parse(savedListJSON);
+        setAddressList(savedList);
+      } catch {
+        setAddressList([]);
+      }
+    }
+  }, []);
+
+  // Filter stakes based on wallet address
+  const filteredStakes = React.useMemo(() => {
+    if (!walletAddress) {
+      return stakes;
+    }
+    return stakes.filter(stake => 
+      stake.seller && 
+      stake.seller.toLowerCase() === walletAddress.toLowerCase()
+    );
+  }, [stakes, walletAddress]);
+
+  // Calculate total pages based on filtered stakes
+  const totalPages = Math.max(1, Math.ceil(filteredStakes.length / rowsPerPage));
+
   // Reset to page 1 if stakes or selectedChain changes
   useEffect(() => {
     setPage(1);
-  }, [stakes, selectedChain, rowsPerPage]);
+  }, [stakes, selectedChain, rowsPerPage, walletAddress]);
 
   return (
     <div className="relative w-full min-h-screen max-w-7xl mx-auto p-2 sm:p-4 md:p-6 bg-gray-50 dark:bg-gray-800 shadow rounded flex flex-col overflow-hidden">
@@ -237,7 +267,42 @@ export default function Marketplace() {
           selectedChain={selectedChain}
           setSelectedChain={setSelectedChain}
         />
-        <div className="flex justify-between items-center mb-6" />
+                <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Filter by Wallet
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={walletAddress}
+                  onChange={(e) => setWalletAddress(e.target.value)}
+                  className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                >
+                  <option value="">All Stakes</option>
+                  {addressList.map((addr) => (
+                    <option key={addr} value={addr}>
+                      {addr.slice(0, 6)}...{addr.slice(-4)}
+                    </option>
+                  ))}
+                </select>
+                {walletAddress && (
+                  <button
+                    onClick={() => setWalletAddress("")}
+                    className="px-3 py-2 text-sm bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          {walletAddress && (
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Showing {filteredStakes.length} of {stakes.length} stakes for {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+            </div>
+          )}
+        </div>
         {loading ? (
           <div className="text-center text-gray-500 dark:text-gray-400 py-8">
             Loading marketplace stakes...
@@ -250,14 +315,17 @@ export default function Marketplace() {
           <div className="overflow-x-auto bg-white/90 dark:bg-gray-800 rounded-lg shadow-lg border border-blue-200 p-4">
             <MarketplaceTable 
               chainId={selectedChain} 
-              stakes={sortData(stakes, sortConfig, NETWORKS[selectedChain].decimals)} 
+              stakes={sortData(filteredStakes, sortConfig, NETWORKS[selectedChain].decimals).slice(
+                (page - 1) * rowsPerPage,
+                page * rowsPerPage
+              )} 
               sortConfig={sortConfig}
               onSort={setSortConfig}
             />
           </div>
         )}
         {/* Pagination controls */}
-        {stakes.length > 10 && (
+        {filteredStakes.length > 10 && (
           <div className="flex flex-row flex-nowrap justify-between items-center gap-2 mt-4 w-full overflow-x-auto">
             <div className="flex items-center gap-2 flex-shrink-0">
               <label
