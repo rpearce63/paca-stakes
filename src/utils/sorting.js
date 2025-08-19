@@ -50,6 +50,24 @@ export const sortData = (data, { key, direction }, networkDecimals) => {
       aValue = Number(ethers.formatUnits(aNetStake.toString(), networkDecimals));
       bValue = Number(ethers.formatUnits(bNetStake.toString(), networkDecimals));
     }
+    // Handle discount percentage calculation
+    else if (key === "discountPercentage") {
+      if (!a.price || !a.amount || !b.price || !b.amount) {
+        aValue = 0;
+        bValue = 0;
+      } else {
+        const aStakeValue = Number(ethers.formatUnits(a.amount, networkDecimals));
+        const bStakeValue = Number(ethers.formatUnits(b.amount, networkDecimals));
+        const aPrice = Number(ethers.formatUnits(a.price, networkDecimals));
+        const bPrice = Number(ethers.formatUnits(b.price, networkDecimals));
+        
+        if (aStakeValue === 0) aValue = 0;
+        else aValue = ((aStakeValue - aPrice) / aStakeValue) * 100;
+        
+        if (bStakeValue === 0) bValue = 0;
+        else bValue = ((bStakeValue - bPrice) / bStakeValue) * 100;
+      }
+    }
     // Handle effective daily rate calculation
     else if (key === "effectiveDailyRate") {
       if (!a.price || !a.amount || !a.dailyRewardRate || !b.price || !b.amount || !b.dailyRewardRate) {

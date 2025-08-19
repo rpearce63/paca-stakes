@@ -70,6 +70,16 @@ function MobileStakePopup({ stake, chainId, onClose, originRect }) {
     return (((netStakeNum * dailyRate) / price) * 100).toFixed(2) + "%";
   };
 
+  // Calculate discount percentage: ((stakeValue - price) / stakeValue) * 100
+  const getDiscountPercentage = (stake) => {
+    if (!stake.price || !stake.amount) return "-";
+    const stakeValue = Number(ethers.formatUnits(stake.amount, decimals));
+    const price = Number(ethers.formatUnits(stake.price, decimals));
+    if (stakeValue === 0) return "-";
+    const discount = ((stakeValue - price) / stakeValue) * 100;
+    return discount.toFixed(2) + "%";
+  };
+
   // Helper to abbreviate address
   const abbreviateAddress = (addr) => {
     if (!addr) return "-";
@@ -282,6 +292,16 @@ export default function MarketplaceTable({ chainId, stakes, sortConfig, onSort }
     return (((netStakeNum * dailyRate) / price) * 100).toFixed(2) + "%";
   };
 
+  // Calculate discount percentage: ((stakeValue - price) / stakeValue) * 100
+  const getDiscountPercentage = (stake) => {
+    if (!stake.price || !stake.amount) return "-";
+    const stakeValue = Number(ethers.formatUnits(stake.amount, decimals));
+    const price = Number(ethers.formatUnits(stake.price, decimals));
+    if (stakeValue === 0) return "-";
+    const discount = ((stakeValue - price) / stakeValue) * 100;
+    return discount.toFixed(2) + "%";
+  };
+
   // Helper to abbreviate address
   const abbreviateAddress = (addr) => {
     if (!addr) return "-";
@@ -353,6 +373,19 @@ export default function MarketplaceTable({ chainId, stakes, sortConfig, onSort }
                 onClick={() => handleSort("amount")}
               >
                 Stake Value {getSortIconUnicode(sortConfig, "amount")}
+              </th>
+              <th 
+                className={`border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                  sortConfig.key === "discountPercentage" ? "bg-blue-100 dark:bg-blue-900/40" : ""
+                }`}
+                onClick={() => handleSort("discountPercentage")}
+              >
+                <span className="relative group cursor-help">
+                  Discount % {getSortIconUnicode(sortConfig, "discountPercentage")}
+                  <span className="absolute left-1/2 -translate-x-1/2 mt-2 w-64 z-20 hidden group-hover:block bg-gray-900 text-white text-xs rounded p-2 shadow-lg border border-gray-700 whitespace-normal">
+                    Percentage discount from original stake value. Negative values indicate a premium.
+                  </span>
+                </span>
               </th>
               <th 
                 className={`border border-gray-300 dark:border-gray-600 px-4 py-2 text-right font-semibold sm:table-cell hidden dark:text-white cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 ${
@@ -439,6 +472,19 @@ export default function MarketplaceTable({ chainId, stakes, sortConfig, onSort }
                     )}
                   </td>
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white sm:table-cell hidden">
+                    <span className={`font-semibold ${
+                      (() => {
+                        const discount = getDiscountPercentage(stake);
+                        if (discount === "-") return "";
+                        const num = parseFloat(discount);
+                        return num > 0 ? "text-green-700 dark:text-green-300" : 
+                               num < 0 ? "text-red-700 dark:text-red-300" : "";
+                      })()
+                    }`}>
+                      {getDiscountPercentage(stake)}
+                    </span>
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white sm:table-cell hidden">
                     {(Number(stake.dailyRewardRate) / 100).toFixed(2)}%
                   </td>
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-right dark:text-white sm:table-cell hidden">
@@ -490,7 +536,7 @@ export default function MarketplaceTable({ chainId, stakes, sortConfig, onSort }
             ) : (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={10}
                   className="text-center py-8 text-gray-500 dark:text-gray-400"
                 >
                   No marketplace stakes found for this chain.
