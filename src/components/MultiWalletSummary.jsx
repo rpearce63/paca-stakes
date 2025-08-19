@@ -29,7 +29,9 @@ const MultiWalletSummary = ({
           );
 
           const stakeData = await getStakesContract.getStakes(address);
-          const rewardsData = await getStakesContract.viewRewards(address);
+          // Claims are currently paused - return 0 for now
+          // TODO: Re-enable when claims are restored
+          const rewardsData = 0; // await getStakesContract.viewRewards(address);
 
           const stakesWithIds = stakeData.map((stake, index) => {
             const amount = Number(
@@ -65,9 +67,7 @@ const MultiWalletSummary = ({
           return {
             chainId,
             totalStaked: chainTotalStaked,
-            rewards: Number(
-              ethers.formatUnits(rewardsData, NETWORKS[chainId].decimals)
-            ),
+            rewards: rewardsData, // Already 0, no need to format
             dailyEarnings: chainDailyEarnings,
           };
         } catch (error) {

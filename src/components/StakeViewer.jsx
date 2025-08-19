@@ -171,6 +171,12 @@ export default function StakeViewer() {
       // console.log(`fetchRewards for ${chainId}`);
       if (!address) return null;
 
+      // Claims are currently paused - return 0 for now
+      // TODO: Re-enable when claims are restored
+      return 0;
+
+      // Original calculation logic (commented out for later restoration):
+      /*
       try {
         const provider = new ethers.JsonRpcProvider(NETWORKS[chainId].rpc);
         const viewRewardsContract = new ethers.Contract(
@@ -187,6 +193,7 @@ export default function StakeViewer() {
         console.error(`Error fetching ${chainId} rewards:`, error);
         return 0;
       }
+      */
     },
     [address]
   );
